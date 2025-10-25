@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 
-class TestScreen extends StatelessWidget {
+class TestScreen extends StatefulWidget {
   const TestScreen({super.key});
+
+  @override
+  State<TestScreen> createState() => _TestScreenState();
+}
+
+class _TestScreenState extends State<TestScreen> {
+  bool _skyExpanded = false;
+
+  double get _skyHeight => _skyExpanded ? 260 : 160; // สูงตอนขยาย/หด
 
   void showAlert(BuildContext context) async {
     await showAirDialog(
@@ -32,67 +41,99 @@ class TestScreen extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: AppColors.primaryGradient5C,
-          begin: AlignmentGeometry.topCenter,
-          end: AlignmentDirectional.bottomCenter,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
           stops: AppColorStops.primaryStop5C,
         ),
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
-          child: Column(
-            children: [
-              SizedBox(height: 50, child: Container(color: Colors.transparent)),
-              PanelPresets.pink(
-                width: 300,
-                height: 160,
-                child: Center(
-                  child: Text(
-                    'Figma-like Panel2',
-                    style: TextStyle(
-                      fontSize: 24,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: Column(
+                children: [
+                  const SizedBox(height: 26),
+
+                  // PINK (คงเดิม)
+                  PanelPresets.pink(
+                    width: 300,
+                    height: 160,
+                    child: const Center(
+                      child: Text(
+                        'Figma-like Panel2',
+                        style: TextStyle(
+                          fontSize: 24,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              SizedBox(height: 50, child: Container(color: Colors.transparent)),
-              PanelPresets.purple(
-                width: 300,
-                height: 160,
-                child: Center(
-                  child: Text(
-                    'Figma-like Panel2',
-                    style: TextStyle(
-                      fontSize: 24,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+
+                  const SizedBox(height: 26),
+
+                  // PURPLE (คงเดิม)
+                  PanelPresets.purple(
+                    width: 300,
+                    height: 160,
+                    child: const Center(
+                      child: Text(
+                        'Figma-like Panel2',
+                        style: TextStyle(
+                          fontSize: 24,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              SizedBox(height: 50, child: Container(color: Colors.transparent)),
-              PanelPresets.sky(
-                width: 300,
-                height: 160,
-                child: Center(
-                  child: Text(
-                    'Figma-like Panel2',
-                    style: TextStyle(
-                      fontSize: 24,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+
+                  const SizedBox(height: 26),
+
+                  // SKY (ใส่อนิเมชันขยายแนวตั้ง + เปลี่ยนข้อความเป็น test)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => setState(() => _skyExpanded = !_skyExpanded),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 320),
+                      curve: Curves.easeOutCubic,
+                      // ให้ parent สูงตามอนิเมชัน เพื่อไม่กระชาก layout
+                      height: _skyHeight,
+                      width: 300,
+                      child: PanelPresets.sky(
+                        width: 300,
+                        height: _skyHeight, // แจ้งความสูงให้ panel ด้วย
+                        child: Center(
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 180),
+                            transitionBuilder: (child, anim) =>
+                                FadeTransition(opacity: anim, child: child),
+                            child: Text(
+                              _skyExpanded ? 'test' : 'Figma-like Panel2',
+                              key: ValueKey(_skyExpanded),
+                              style: const TextStyle(
+                                fontSize: 24,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+
+                  const SizedBox(height: 26),
+
+                  AppButton.solid(
+                    label: 'label',
+                    onPressed: () => showAlert(context),
+                  ),
+                ],
               ),
-              SizedBox(height: 50, child: Container(color: Colors.transparent)),
-              AppButton.solid(
-                label: 'label',
-                onPressed: () => showAlert(context),
-              ),
-            ],
+            ),
           ),
         ),
       ),
