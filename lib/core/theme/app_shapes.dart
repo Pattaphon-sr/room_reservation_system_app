@@ -6,7 +6,7 @@ class AppShapes {
   static const radiusMd = Radius.circular(16);
   static const radiusLg = Radius.circular(20);
   static const radiusXl = Radius.circular(30);
-  static const radiusXxl = Radius.circular(50);
+  static const radiusXxl = Radius.circular(44);
 
   static const roundedLg = RoundedRectangleBorder(
     borderRadius: BorderRadius.all(radiusLg),

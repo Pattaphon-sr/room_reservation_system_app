@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'features/auth/view/initial_screen.dart';
-import 'features/auth/view/sign_up_screen.dart';
-import 'features/auth/view/sign_in_screen.dart';
+import 'package:room_reservation_system_app/features/auth/auth.dart';
 import 'features/test_screen.dart';
 
 void main() {
@@ -15,6 +13,9 @@ class MyApp extends StatelessWidget {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       home: TestScreen(),
+      // home: InitialScreen(),
+      // home: SignInScreen(),
+      // home: SignUpScreen(),
     );
   }
 }
