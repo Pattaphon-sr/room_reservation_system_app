@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:room_reservation_system_app/core/theme/app_colors.dart';
+import 'package:room_reservation_system_app/core/theme/theme.dart';
 
 enum AppButtonVariant { solid, outline }
 

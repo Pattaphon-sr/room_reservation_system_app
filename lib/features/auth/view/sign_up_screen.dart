@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
-import 'package:room_reservation_system_app/widgets/buttons/app_button.dart';
+import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
