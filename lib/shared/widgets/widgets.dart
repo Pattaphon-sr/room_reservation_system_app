@@ -2,3 +2,5 @@ export 'package:room_reservation_system_app/shared/widgets/buttons/app_button.da
 export 'package:room_reservation_system_app/shared/widgets/containers/figma_panel.dart';
 export 'package:room_reservation_system_app/shared/widgets/containers/figma_panel_presets.dart';
 export 'package:room_reservation_system_app/shared/widgets/dialogs/air_dialog.dart';
+// export 'package:room_reservation_system_app/shared/widgets/maps/map_floor_test.dart';
+export 'package:room_reservation_system_app/shared/widgets/maps/map_floor.dart';
