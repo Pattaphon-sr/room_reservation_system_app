@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/features/auth/auth.dart';
+import 'package:room_reservation_system_app/features/user/dashboard_user.dart';
 import 'features/test_screen.dart';
 
 void main() {
@@ -16,6 +17,7 @@ class MyApp extends StatelessWidget {
       // home: InitialScreen(),
       // home: SignInScreen(),
       // home: SignUpScreen(),
+      // home: DashboardUser(),
     );
   }
 }
