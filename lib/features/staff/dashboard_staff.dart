@@ -11,8 +11,7 @@ class DashboardStaff extends StatefulWidget {
 }
 
 class _DashboardStaffState extends State<DashboardStaff> {
-
-   Widget _buildStatCard(Color color, String count, String label) {
+  Widget _buildStatCard(Color color, String count, String label) {
     return PanelPresets.air(
       width: 150,
       height: 70,
@@ -32,13 +31,28 @@ class _DashboardStaffState extends State<DashboardStaff> {
                   ),
                 ),
                 const SizedBox(width: 40),
-                Text(
-                  count,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Stack(
+                  children: [
+                    Text(
+                      count,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        foreground: Paint()
+                          ..style = PaintingStyle.stroke
+                          ..strokeWidth = 3
+                          ..color = Colors.black,
+                      ),
+                    ),
+                    Text(
+                      count,
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -84,15 +98,15 @@ class _DashboardStaffState extends State<DashboardStaff> {
             ),
             const SizedBox(height: 24),
             Wrap(
-                spacing: 20,
-                runSpacing: 20,
-                children: [
-                  _buildStatCard(Colors.green, '8', 'Free slots'),
-                  _buildStatCard(Colors.amber, '4', 'Pending slots'),
-                  _buildStatCard(Colors.blue, '3', 'Booked Slots'),
-                  _buildStatCard(Colors.red, '2', 'Disabled rooms'),
-                ],
-              ),
+              spacing: 20,
+              runSpacing: 20,
+              children: [
+                _buildStatCard(Colors.green, '8', 'Free slots'),
+                _buildStatCard(Colors.amber, '4', 'Pending slots'),
+                _buildStatCard(Colors.blue, '3', 'Booked Slots'),
+                _buildStatCard(Colors.red, '2', 'Disabled rooms'),
+              ],
+            ),
             SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -109,8 +123,12 @@ class _DashboardStaffState extends State<DashboardStaff> {
             ),
             SizedBox(height: 20),
             Column(
-              children: [                
-                Container(color: Colors.grey, width: double.infinity, height: 420),
+              children: [
+                Container(
+                  color: Colors.grey,
+                  width: double.infinity,
+                  height: 420,
+                ),
               ],
             ),
           ],

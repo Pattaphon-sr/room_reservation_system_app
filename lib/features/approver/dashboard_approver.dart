@@ -74,13 +74,28 @@ class _DashboardApproverState extends State<DashboardApprover> {
                   ),
                 ),
                 const SizedBox(width: 40),
-                Text(
-                  count,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Stack(
+                  children: [
+                    Text(
+                      count,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        foreground: Paint()
+                          ..style = PaintingStyle.stroke
+                          ..strokeWidth = 3
+                          ..color = Colors.black,
+                      ),
+                    ),
+                    Text(
+                      count,
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

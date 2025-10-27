@@ -19,9 +19,9 @@ class MyApp extends StatelessWidget {
       // home: InitialScreen(),
       // home: SignInScreen(),
       // home: SignUpScreen(),
-      home: DashboardUser(),
+      // home: DashboardUser(),
       // home: DashboardStaff(),
-      // home: DashboardApprover(),
+      home: DashboardApprover(),
     );
   }
 }
