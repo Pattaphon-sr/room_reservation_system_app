@@ -103,9 +103,9 @@ class _DashboardApproverState extends State<DashboardApprover> {
             Text(
               label,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 17,
                 color: Colors.white,
-                fontWeight: FontWeight.bold,
+                // fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -131,16 +131,16 @@ class _DashboardApproverState extends State<DashboardApprover> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
+              const SizedBox(height: 50),
               Text(
                 'Dashboard',
                 style: TextStyle(
-                  fontSize: 34,
+                  fontSize: 25,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 15),
               Wrap(
                 spacing: 20,
                 runSpacing: 20,
@@ -151,14 +151,15 @@ class _DashboardApproverState extends State<DashboardApprover> {
                   _buildStatCard(Colors.red, '2', 'Disabled rooms'),
                 ],
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 15),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: const [
                   Text(
-                    "DAILY RESERVATION",
+                    "ROOM REQUEST",
                     style: TextStyle(
                       color: Colors.white70,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -166,7 +167,7 @@ class _DashboardApproverState extends State<DashboardApprover> {
                     "See All",
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -175,7 +176,7 @@ class _DashboardApproverState extends State<DashboardApprover> {
               const SizedBox(height: 10),
               PanelPresets.purple(
                 width: double.infinity,
-                height: 180,
+                height: 210,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -193,10 +194,7 @@ class _DashboardApproverState extends State<DashboardApprover> {
                               fontSize: 15,
                             ),
                           ),
-
                           SizedBox(width: 16),
-
-                          // ข้อมูลห้อง ห่อด้วย Expanded เพื่อให้ Spacer ทำงานได้
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,8 +216,6 @@ class _DashboardApproverState extends State<DashboardApprover> {
                               ],
                             ),
                           ),
-
-                          // สถานะ
                           Text(
                             'pending',
                             style: TextStyle(
@@ -230,14 +226,13 @@ class _DashboardApproverState extends State<DashboardApprover> {
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 12),
                       Container(height: 1, color: Colors.white30),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 25),
+              const SizedBox(height: 15),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: const [
@@ -245,6 +240,7 @@ class _DashboardApproverState extends State<DashboardApprover> {
                     "FLOOR LIST",
                     style: TextStyle(
                       color: Colors.grey,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -252,7 +248,7 @@ class _DashboardApproverState extends State<DashboardApprover> {
                     "See All",
                     style: TextStyle(
                       color: Colors.teal,
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

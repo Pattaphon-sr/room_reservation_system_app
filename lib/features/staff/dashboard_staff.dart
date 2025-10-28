@@ -60,9 +60,9 @@ class _DashboardStaffState extends State<DashboardStaff> {
             Text(
               label,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 17,
                 color: Colors.white,
-                fontWeight: FontWeight.bold,
+                // fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -74,7 +74,8 @@ class _DashboardStaffState extends State<DashboardStaff> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
+      body: SingleChildScrollView(
+      child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: AppColors.primaryGradient5C,
@@ -87,16 +88,16 @@ class _DashboardStaffState extends State<DashboardStaff> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 24),
+            const SizedBox(height: 50),
             Text(
-              'Dashboard',
-              style: TextStyle(
-                fontSize: 34,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+                'Dashboard',
+                style: TextStyle(
+                  fontSize: 25,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 15),
             Wrap(
               spacing: 20,
               runSpacing: 20,
@@ -115,7 +116,7 @@ class _DashboardStaffState extends State<DashboardStaff> {
                   "See All",
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -127,13 +128,14 @@ class _DashboardStaffState extends State<DashboardStaff> {
                 Container(
                   color: Colors.grey,
                   width: double.infinity,
-                  height: 420,
+                  height: 450,
                 ),
               ],
             ),
           ],
         ),
       ),
+      )
     );
   }
 }

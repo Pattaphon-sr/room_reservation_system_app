@@ -79,19 +79,19 @@ class _DashboardUserState extends State<DashboardUser> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
+              const SizedBox(height: 50),
               Text(
                 'Dashboard',
                 style: TextStyle(
-                  fontSize: 34,
+                  fontSize: 25,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 15),
               PanelPresets.air(
                 width: double.infinity,
-                height: 175,
+                height: 135,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     vertical: 12,
@@ -100,7 +100,6 @@ class _DashboardUserState extends State<DashboardUser> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // หัวตาราง
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: const [
@@ -149,10 +148,10 @@ class _DashboardUserState extends State<DashboardUser> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 2),
                       for (var row in availabilityData)
                         Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          padding: const EdgeInsets.symmetric(vertical: 1),
                           child: Row(
                             children: [
                               Expanded(
@@ -215,6 +214,7 @@ class _DashboardUserState extends State<DashboardUser> {
                     "DAILY RESERVATION",
                     style: TextStyle(
                       color: Colors.white70,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -222,7 +222,7 @@ class _DashboardUserState extends State<DashboardUser> {
                     "See All",
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -231,7 +231,7 @@ class _DashboardUserState extends State<DashboardUser> {
               const SizedBox(height: 10),
               PanelPresets.purple(
                 width: double.infinity,
-                height: 180,
+                height: 205,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -299,7 +299,7 @@ class _DashboardUserState extends State<DashboardUser> {
                   ),
                 ),
               ),
-              const SizedBox(height: 25),
+              const SizedBox(height: 15),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: const [
@@ -307,6 +307,7 @@ class _DashboardUserState extends State<DashboardUser> {
                     "FLOOR LIST",
                     style: TextStyle(
                       color: Colors.grey,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -314,7 +315,7 @@ class _DashboardUserState extends State<DashboardUser> {
                     "See All",
                     style: TextStyle(
                       color: Colors.teal,
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
