@@ -8,6 +8,11 @@ class AppColors {
   static const Color oceanDeep = Color(0xFF065084);
   static const Color purpleDeep = Color(0xFF320A6B);
 
+  // room status
+  static const Color roomBlue = Color(0xFF0F828C);
+  static const Color roomGrey = Color(0xFF848484);
+  static const Color roomdecoration = Color(0xFFEFF5D2);
+
   // Pink / Rose
   static const Color roseMist = Color(0xFFF5D2D2);
   static const Color roseSoft = Color(0xFFFFBFBF);
