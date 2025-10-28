@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:room_reservation_system_app/features/Approver/approver.dart';
+import 'package:room_reservation_system_app/features/Staff/staff.dart';
+import 'package:room_reservation_system_app/features/User/user.dart';
 import 'package:room_reservation_system_app/features/auth/auth.dart';
 import 'features/test_screen.dart';
 
@@ -12,10 +15,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: TestScreen(),
+      // home: TestScreen(),
       // home: InitialScreen(),
       // home: SignInScreen(),
       // home: SignUpScreen(),
+      // home: ApproverHistoryPage(),
+      // home: StaffHistoryPage(),
+      home: HistoryPage(),
     );
   }
 }
