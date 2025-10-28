@@ -12,10 +12,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: TestScreen(),
+      // home: TestScreen(),
       // home: InitialScreen(),
       // home: SignInScreen(),
       // home: SignUpScreen(),
+       home: AccountPage(),
     );
   }
 }
