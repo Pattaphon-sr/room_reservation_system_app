@@ -271,7 +271,7 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(

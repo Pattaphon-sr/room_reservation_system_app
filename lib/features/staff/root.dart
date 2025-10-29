@@ -71,16 +71,16 @@ class _StaffRootState extends State<StaffRoot> {
               initialPageBuilder: (_) => const StaffHomeScreen(),
               routes: {'/': (_) => const StaffHomeScreen()},
             ),
-            NestedTabNavigator(
-              navKey: _navKeys[1],
-              initialPageBuilder: (_) => const FloorEditorScreen(),
-              routes: {'/': (_) => const FloorEditorScreen()},
-            ),
             // NestedTabNavigator(
             //   navKey: _navKeys[1],
-            //   initialPageBuilder: (_) => const StaffBookingScreen(),
-            //   routes: {'/': (_) => const StaffBookingScreen()},
+            //   initialPageBuilder: (_) => const FloorEditorScreen(),
+            //   routes: {'/': (_) => const FloorEditorScreen()},
             // ),
+            NestedTabNavigator(
+              navKey: _navKeys[1],
+              initialPageBuilder: (_) => const StaffBookingScreen(),
+              routes: {'/': (_) => const StaffBookingScreen()},
+            ),
             NestedTabNavigator(
               navKey: _navKeys[2],
               initialPageBuilder: (_) => const StaffHistoryScreen(),

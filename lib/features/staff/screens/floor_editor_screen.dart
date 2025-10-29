@@ -748,48 +748,49 @@ class _EditRulesScreen extends StatelessWidget {
     final items = <_RuleItem>[
       _RuleItem(
         icon: Icons.touch_app_rounded,
-        title: 'การเลือกช่อง (Selection)',
+        title: 'Cell Selection',
         details: [
-          'กดช่องเดิมซ้ำ = ยกเลิกการเลือก',
-          'ไม่มีการเลือก → ไม่แสดง Toolbar/ฟอร์ม/ปุ่มบันทึก',
+          'Tap the same cell again to deselect it.',
+          'When nothing is selected → Toolbar / form / save buttons are hidden.',
         ],
       ),
       _RuleItem(
         icon: Icons.grid_on_rounded,
-        title: 'ชนิดช่อง (Cell Types)',
+        title: 'Cell Types',
         details: ['empty, corridor, stair, decoration, room'],
       ),
       _RuleItem(
         icon: Icons.meeting_room_rounded,
         title: 'Room & Base Status',
         details: [
-          'สถานะบนแผนที่อาจเป็น free/pending/reserved/disabled',
-          'สำหรับการแก้ฐาน (base) ใช้แค่ Enable=free / Disable=disabled',
-          'Disable จะปิดทุก slot ของตำแหน่งนั้น (pending/reserved คงไว้)',
+          'Map status can be: free / pending / reserved / disabled.',
+          'For base editing, use only Enable = free / Disable = disabled.',
+          'Disable will close that position for all slots (pending/reserved are kept).',
         ],
       ),
       _RuleItem(
         icon: Icons.warning_amber_rounded,
-        title: 'การลบห้อง (Empty)',
+        title: 'Remove Room (Empty)',
         details: [
-          'เลือกห้องแล้วกด Empty → มีหน้าต่างยืนยันก่อนลบ',
-          'ลบแล้วช่องกลายเป็น empty และยกเลิกการเลือก',
+          'Select a room and press Empty → a confirmation dialog appears.',
+          'After confirming, the cell becomes empty and the selection is cleared.',
+          'Note: The room is not permanently deleted; it is only hidden (soft-remove).',
         ],
       ),
       _RuleItem(
         icon: Icons.save_outlined,
-        title: 'การบันทึก (Confirm)',
+        title: 'Saving (Confirm)',
         details: [
-          'อัปเดต base ชนิดช่องทันทีเมื่อกดเครื่องมือ',
-          'ปุ่ม Confirm จะ sync ชื่อห้อง + baseStatus (ทุก slot)',
+          'Base cell type is updated immediately when a tool is pressed.',
+          'The Confirm button syncs room name + baseStatus across all slots.',
         ],
       ),
       _RuleItem(
         icon: Icons.rule_rounded,
-        title: 'ข้อจำกัดทั่วไป',
+        title: 'General Constraints',
         details: [
-          'ผู้ใช้ทั่วไปไม่เกี่ยวข้องกับหน้านี้ (สำหรับ Staff)',
-          'ไอคอน/ปุ่มจะแสดงตามกฎเพื่อป้องกันข้อผิดพลาด',
+          'This page is for Staff; regular users do not use it.',
+          'Icons/buttons are shown based on rules to prevent mistakes.',
         ],
       ),
     ];
