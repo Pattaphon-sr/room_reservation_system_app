@@ -5,13 +5,13 @@ import 'package:room_reservation_system_app/core/theme/theme.dart';
 enum DecisionStatus { approved, disapproved }
 
 class ApproverHistoryItem {
-  final DateTime dateTime;       // วัน-เวลาอนุมัติ/ไม่อนุมัติ
-  final DecisionStatus status;   // approved | disapproved
-  final String floor;            // เช่น Floor5
-  final String roomCode;         // เช่น R501
-  final String slot;             // เช่น 08:00-10:00
-  final String requesterName;    // คนขอห้อง (อาจารย์)
-  final String? remark;          // หมายเหตุ/เหตุผล (โชว์เมื่อ disapproved)
+  final DateTime dateTime; // วัน-เวลาอนุมัติ/ไม่อนุมัติ
+  final DecisionStatus status; // approved | disapproved
+  final String floor; // เช่น Floor5
+  final String roomCode; // เช่น R501
+  final String slot; // เช่น 08:00-10:00
+  final String requesterName; // คนขอห้อง (อาจารย์)
+  final String? remark; // หมายเหตุ/เหตุผล (โชว์เมื่อ disapproved)
 
   ApproverHistoryItem({
     required this.dateTime,
@@ -111,8 +111,18 @@ class _ApproverHistoryPageState extends State<ApproverHistoryPage> {
   // ===== Helpers: Format =====
   String _formatDateOnly(DateTime dt) {
     const m = [
-      'January','February','March','April','May','June',
-      'July','August','September','October','November','December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${dt.day} ${m[dt.month - 1]} ${dt.year}';
   }
@@ -126,8 +136,18 @@ class _ApproverHistoryPageState extends State<ApproverHistoryPage> {
 
   String _monthYearLabel(DateTime dt) {
     const m = [
-      'January','February','March','April','May','June',
-      'July','August','September','October','November','December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${m[dt.month - 1]} ${dt.year}';
   }
@@ -138,13 +158,17 @@ class _ApproverHistoryPageState extends State<ApproverHistoryPage> {
   ) {
     final map = <String, List<ApproverHistoryItem>>{};
     for (final it in items) {
-      final key = '${it.dateTime.year}-${it.dateTime.month.toString().padLeft(2, '0')}';
+      final key =
+          '${it.dateTime.year}-${it.dateTime.month.toString().padLeft(2, '0')}';
       (map[key] ??= []).add(it);
     }
     for (final list in map.values) {
-      list.sort((a, b) => b.dateTime.compareTo(a.dateTime)); // ใหม่ → เก่าในกลุ่ม
+      list.sort(
+        (a, b) => b.dateTime.compareTo(a.dateTime),
+      ); // ใหม่ → เก่าในกลุ่ม
     }
-    final keys = map.keys.toList()..sort((a, b) => b.compareTo(a)); // กลุ่มใหม่ → เก่า
+    final keys = map.keys.toList()
+      ..sort((a, b) => b.compareTo(a)); // กลุ่มใหม่ → เก่า
     return [for (final k in keys) MapEntry(k, map[k]!)];
   }
 
@@ -173,7 +197,11 @@ class _ApproverHistoryPageState extends State<ApproverHistoryPage> {
       children.addAll(
         List<Widget>.generate(g.value.length * 2 - 1, (index) {
           if (index.isOdd) {
-            return const Divider(height: 22, thickness: 0.9, color: Color(0xFFE1E6EB));
+            return const Divider(
+              height: 22,
+              thickness: 0.9,
+              color: Color(0xFFE1E6EB),
+            );
           }
           final i = index ~/ 2;
           return _ApproverTile(item: g.value[i]);
@@ -193,132 +221,133 @@ class _ApproverHistoryPageState extends State<ApproverHistoryPage> {
       if (q.isEmpty) return true;
       final hay =
           '${_formatDateOnly(e.dateTime)} ${_formatTimeOnly(e.dateTime)} '
-          '${e.floor} ${e.roomCode} ${e.slot} ${e.requesterName} '
-          '${e.status == DecisionStatus.approved ? 'approved' : 'disapproved'} '
-          '${e.remark ?? ''}'.toLowerCase();
+                  '${e.floor} ${e.roomCode} ${e.slot} ${e.requesterName} '
+                  '${e.status == DecisionStatus.approved ? 'approved' : 'disapproved'} '
+                  '${e.remark ?? ''}'
+              .toLowerCase();
       return hay.contains(q);
-    }).toList()
-      ..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // ใหม่ → เก่า
+    }).toList()..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // ใหม่ → เก่า
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF121212),
-      body: Stack(
-        children: [
-          // พื้นหลัง Gradient ตาม AppColors
-         Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: AppColors.primaryGradient5C,          // ← ดึงจาก list ตรง ๆ
-              stops: AppColorStops.primaryStop5C,           // (ถ้ามี)
-            ),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: AppColors.primaryGradient5C,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: AppColorStops.primaryStop5C,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 24),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.0),
+                child: Text(
+                  'Approval History',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 25,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Search (แก้วใส + เงา)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x802B9CFF),
+                        blurRadius: 18,
+                        spreadRadius: -2,
+                        offset: Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _search,
+                    onChanged: (_) => setState(() {}),
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      hintText: 'Search ...',
+                      hintStyle: const TextStyle(color: Colors.white70),
+                      prefixIcon: const Icon(Icons.search, color: Colors.white),
+                      filled: true,
+                      fillColor: const Color(0x334A74A8),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(28),
+                        borderSide: BorderSide(
+                          color: Colors.white.withOpacity(0.25),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(28),
+                        borderSide: BorderSide(
+                          color: Colors.white.withOpacity(0.25),
+                        ),
+                      ),
+                      focusedBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(28)),
+                        borderSide: BorderSide(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // การ์ดพื้นหลังอ่อน + โค้งด้านบน
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(26),
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color.fromARGB(255, 218, 255, 253),
+                        Color(0xFFEFF7FF),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 24,
+                        spreadRadius: -8,
+                        color: Colors.black26,
+                        offset: Offset(0, -6),
+                      ),
+                    ],
+                  ),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                    children: [
+                      // กลุ่มรายเดือนทั้งหมด (อนุมัติ/ไม่อนุมัติปะปน)
+                      ..._buildSectionByMonth(
+                        sectionTitle: 'Done by Month',
+                        items:
+                            filtered, // ในมุม Approver ทุกอันคือการตัดสินแล้ว
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-          // ---------- CONTENT ----------
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 24),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Text(
-                    'Approval History',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 25,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Search (แก้วใส + เงา)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x802B9CFF),
-                          blurRadius: 18,
-                          spreadRadius: -2,
-                          offset: Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _search,
-                      onChanged: (_) => setState(() {}),
-                      style: const TextStyle(color: Colors.white),
-                      cursorColor: Colors.white,
-                      decoration: InputDecoration(
-                        hintText: 'Search ...',
-                        hintStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon: const Icon(Icons.search, color: Colors.white),
-                        filled: true,
-                        fillColor: const Color(0x334A74A8),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(28),
-                          borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(28),
-                          borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
-                        ),
-                        focusedBorder: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(28)),
-                          borderSide: BorderSide(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // การ์ดพื้นหลังอ่อน + โค้งด้านบน
-                Expanded(
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color.fromARGB(255, 218, 255, 253),
-                          Color(0xFFEFF7FF),
-                        ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          blurRadius: 24,
-                          spreadRadius: -8,
-                          color: Colors.black26,
-                          offset: Offset(0, -6),
-                        ),
-                      ],
-                    ),
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                      children: [
-                        // กลุ่มรายเดือนทั้งหมด (อนุมัติ/ไม่อนุมัติปะปน)
-                        ..._buildSectionByMonth(
-                          sectionTitle: 'Done by Month',
-                          items: filtered, // ในมุม Approver ทุกอันคือการตัดสินแล้ว
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -365,10 +394,7 @@ class _Empty extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 14.0),
-      child: Text(
-        text,
-        style: const TextStyle(color: Color(0xFF9AA1A9)),
-      ),
+      child: Text(text, style: const TextStyle(color: Color(0xFF9AA1A9))),
     );
   }
 }
@@ -378,8 +404,9 @@ class _ApproverTile extends StatelessWidget {
   final ApproverHistoryItem item;
   const _ApproverTile({required this.item});
 
-  Color get _statusColor =>
-      item.status == DecisionStatus.approved ? const Color(0xFF399918) : const Color(0xFFE62727);
+  Color get _statusColor => item.status == DecisionStatus.approved
+      ? const Color(0xFF399918)
+      : const Color(0xFFE62727);
 
   String get _statusText =>
       item.status == DecisionStatus.approved ? 'Approved' : 'Disapproved';
@@ -501,8 +528,18 @@ class _ApproverTile extends StatelessWidget {
 
   String _formatDateOnly(DateTime dt) {
     const m = [
-      'January','February','March','April','May','June',
-      'July','August','September','October','November','December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${dt.day} ${m[dt.month - 1]} ${dt.year}';
   }

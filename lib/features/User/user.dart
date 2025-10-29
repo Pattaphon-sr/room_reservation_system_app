@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
+import 'dart:collection';
 
 /// ===================== MODEL =====================
 enum ApprovalStatus { pending, approved, rejected }
@@ -136,10 +137,12 @@ class _HistoryPageState extends State<HistoryPage> {
   /// ============ Helpers: Group by Month-Year ============
   /// คืนค่ากลุ่มรายการตามเดือน-ปี (ใหม่ → เก่า)
   List<MapEntry<String, List<ActivityItem>>> _groupByMonth(
-      List<ActivityItem> items) {
+    List<ActivityItem> items,
+  ) {
     final map = <String, List<ActivityItem>>{};
     for (final it in items) {
-      final key = '${it.dateTime.year}-${it.dateTime.month.toString().padLeft(2, '0')}';
+      final key =
+          '${it.dateTime.year}-${it.dateTime.month.toString().padLeft(2, '0')}';
       (map[key] ??= []).add(it);
     }
 
@@ -150,7 +153,9 @@ class _HistoryPageState extends State<HistoryPage> {
 
     // sort คีย์เดือน (ใหม่ → เก่า)
     final sortedKeys = map.keys.toList()
-      ..sort((a, b) => b.compareTo(a)); // yyyy-mm string works for lexicographic
+      ..sort(
+        (a, b) => b.compareTo(a),
+      ); // yyyy-mm string works for lexicographic
 
     // คงลำดับด้วย SplayTree/LinkedHashMap ก็ได้ ที่นี่แปลงเป็น list ของ entries
     final out = <MapEntry<String, List<ActivityItem>>>[];
@@ -162,8 +167,18 @@ class _HistoryPageState extends State<HistoryPage> {
 
   String _monthYearLabel(DateTime dt) {
     const months = [
-      'January','February','March','April','May','June',
-      'July','August','September','October','November','December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${months[dt.month - 1]} ${dt.year}';
   }
@@ -201,14 +216,18 @@ class _HistoryPageState extends State<HistoryPage> {
     // Filter (ค้นหา floor/room/slot/note)
     final filtered = _items.where((e) {
       if (q.isEmpty) return true;
-      final hay = '${e.floor} ${e.roomCode} ${e.slot} ${e.note ?? ''}'.toLowerCase();
+      final hay = '${e.floor} ${e.roomCode} ${e.slot} ${e.note ?? ''}'
+          .toLowerCase();
       return hay.contains(q);
     }).toList();
 
     // แยก Pending / Done
-    final pending = filtered.where((e) => e.status == ApprovalStatus.pending).toList();
-    final done = filtered.where((e) => e.status != ApprovalStatus.pending).toList()
-      ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    final pending = filtered
+        .where((e) => e.status == ApprovalStatus.pending)
+        .toList();
+    final done =
+        filtered.where((e) => e.status != ApprovalStatus.pending).toList()
+          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
 
     return Container(
       decoration: BoxDecoration(
@@ -225,30 +244,27 @@ class _HistoryPageState extends State<HistoryPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 18),
-              // Title
+              const SizedBox(height: 24),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.0),
                 child: Text(
-                  'Activity',
+                  'Activity History',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 34,
+                    fontSize: 25,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.3,
                   ),
                 ),
               ),
               const SizedBox(height: 14),
-              // Search with glow
+
+              // Search (ฟรอสต์+เงาเรือง)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(28),
-                    gradient: const LinearGradient(
-                      colors: [Color(0x3340A4FF), Color(0x3340E0FF)],
-                    ),
                     boxShadow: const [
                       BoxShadow(
                         color: Color(0x802B9CFF),
@@ -282,71 +298,65 @@ class _HistoryPageState extends State<HistoryPage> {
                           color: Colors.white.withOpacity(0.25),
                         ),
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(28),
-                        borderSide: const BorderSide(color: Colors.white),
+                      focusedBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(28)),
+                        borderSide: BorderSide(color: Colors.white),
                       ),
                     ),
                   ),
                 ),
               ),
+
               const SizedBox(height: 16),
 
-                // Rounded container with light gradient
-                Expanded(
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0xFFF8FBFF), // almost white with cool tone
-                          Color(0xFFEFF7FF), // very light blue bottom
-                        ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          blurRadius: 24,
-                          spreadRadius: -8,
-                          color: Colors.black26,
-                          offset: Offset(0, -6),
-                        ),
+              // การ์ดเนื้อหาโค้ง + ไล่เฉดอ่อน
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(26),
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color.fromARGB(255, 218, 255, 253),
+                        Color(0xFFEFF7FF),
                       ],
                     ),
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                      children: [
-                        // Pending
-                        const _SectionHeader(
-                          title: 'Pending Approval',
-                          color: Color(0xFFF5A623),
-                        ),
-                        const SizedBox(height: 10),
-                        const _MonthLabel(text: 'October 2025'),
-                        const SizedBox(height: 8),
-                        if (pending.isEmpty)
-                          const _Empty(text: 'No pending requests'),
-                        ..._tilesWithDividers(pending),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 24,
+                        spreadRadius: -8,
+                        color: Colors.black26,
+                        offset: Offset(0, -6),
+                      ),
+                    ],
+                  ),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                    children: [
+                      // Pending by month
+                      ..._buildSectionByMonth(
+                        sectionTitle: 'Pending Approval',
+                        items: pending,
+                        titleColor: const Color(0xFFF5A623),
+                      ),
 
                       const SizedBox(height: 18),
 
-                        // Done
-                        const _SectionHeader(title: 'Done'),
-                        const SizedBox(height: 10),
-                        const _MonthLabel(text: 'October 2025'),
-                        const SizedBox(height: 8),
-                        if (done.isEmpty)
-                          const _Empty(text: 'No history yet'),
-                        ..._tilesWithDividers(done),
-                      ],
-                    ),
+                      // Done by month
+                      ..._buildSectionByMonth(
+                        sectionTitle: 'Done',
+                        items: done,
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -479,10 +489,12 @@ class _ActivityTile extends StatelessWidget {
             ],
           ),
 
-          if (item.status == ApprovalStatus.rejected && (item.note ?? '').isNotEmpty)
+          // เหตุผลเมื่อ Rejected
+          if (item.status == ApprovalStatus.rejected &&
+              (item.note ?? '').isNotEmpty)
             const SizedBox(height: 4),
-
-          if (item.status == ApprovalStatus.rejected && (item.note ?? '').isNotEmpty)
+          if (item.status == ApprovalStatus.rejected &&
+              (item.note ?? '').isNotEmpty)
             Text(
               item.note!,
               style: const TextStyle(
