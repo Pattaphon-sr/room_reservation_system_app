@@ -88,65 +88,66 @@ class _AccountPageState extends State<AccountPage> {
   }
 
   Future<void> _showSignOutDialog(BuildContext context) async {
-  await showAirDialog(
-    context,
-    title: null,
-    content: Center(
-      // Center ทำให้ dialog อยู่ตรงกลางแน่นอน
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min, // พอดีกับเนื้อหา
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 12),
-            // สลับด้านไอคอน
-            Transform(
-              alignment: Alignment.center,
-              transform: Matrix4.rotationY(3.1416),
-              child: Image.asset(
-                'assets/icons/healthicons--running-outline.png',
-                width: 120,
-                height: 120,
-                color: Colors.white,
+    await showAirDialog(
+      context,
+      height: 400,
+      title: null,
+      content: Center(
+        // Center ทำให้ dialog อยู่ตรงกลางแน่นอน
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 12),
+              // สลับด้านไอคอน
+              Transform(
+                alignment: Alignment.center,
+                transform: Matrix4.rotationY(3.1416),
+                child: Image.asset(
+                  'assets/icons/healthicons--running-outline.png',
+                  width: 120,
+                  height: 120,
+                  color: Colors.white,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              "Sign out?",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+              const SizedBox(height: 20),
+              const Text(
+                "Sign out?",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              "Are you sure you want to sign out?",
-              style: TextStyle(fontSize: 14, color: Colors.white70),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            AppButton.solid(
-              label: 'Sign Out',
-              onPressed: () async {
-                Navigator.pop(context);
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const SignInScreen()),
-                  (route) => false,
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            AppButton.outline(
-              label: 'Cancel',
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
+              const SizedBox(height: 8),
+              const Text(
+                "Are you sure you want to sign out?",
+                style: TextStyle(fontSize: 14, color: Colors.white70),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 42),
+              AppButton.solid(
+                label: 'Sign Out',
+                onPressed: () async {
+                  Navigator.pop(context);
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const SignInScreen()),
+                    (route) => false,
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              AppButton.outline(
+                label: 'Cancel',
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-    actions: const [SizedBox.shrink()],
-  );
-}
+      actions: const [SizedBox.shrink()],
+    );
+  }
 }
