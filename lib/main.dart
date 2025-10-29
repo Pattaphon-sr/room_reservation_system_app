@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:room_reservation_system_app/features/auth/auth.dart';
-// import 'package:room_reservation_system_app/features/free.dart';
-import 'package:room_reservation_system_app/features/staff/screens/floor_editor_screen.dart';
-import 'features/test_screen.dart';
-import 'features/map_preview.dart';
+import 'package:room_reservation_system_app/app.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -13,16 +10,10 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-
-      // home: TestScreen(),
-      // home: InitialScreen(),
-      // home: SignInScreen(),
-      // home: SignUpScreen(),
-      home: FloorEditorScreen(),
-      // home: MapPreview(),
-      // home: FloorEditorScreen(),
+      title: 'Room Reservation',
+      home: const InitialScreen(),
     );
   }
 }
