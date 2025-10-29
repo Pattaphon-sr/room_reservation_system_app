@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/features/Approver/approver.dart';
-import 'package:room_reservation_system_app/features/Staff/staff.dart';
-import 'package:room_reservation_system_app/features/User/user.dart';
+import 'package:room_reservation_system_app/features/staff/staff.dart';
+import 'package:room_reservation_system_app/features/user/user.dart';
 import 'package:room_reservation_system_app/features/auth/auth.dart';
 import 'features/test_screen.dart';
 
