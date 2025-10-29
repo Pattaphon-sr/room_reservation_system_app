@@ -30,7 +30,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                     border: Border.all(color: Colors.white, width: 2),
                   ),
                 ),
-                const SizedBox(width: 40),
+                const SizedBox(width: 30),
                 Text(
                   count,
                   style: TextStyle(
@@ -203,11 +203,11 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 50),
+              const SizedBox(height: 40),
               const Text(
                 'Dashboard',
                 style: TextStyle(
-                  fontSize: 25,
+                  fontSize: 35,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),

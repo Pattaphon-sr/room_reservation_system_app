@@ -31,14 +31,14 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
         body: SafeArea(
           child: Column(
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
 
               /// ======= Header: วันที่ + เวลา =======
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 15),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: [_dateBox(), const SizedBox(width: 60), _timeBox()],
+                  children: [_dateBox(), const SizedBox(width: 47), _timeBox()],
                 ),
               ),
 
@@ -92,12 +92,12 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
               fontSize: 14,
             ),
           ),
-          SizedBox(height: 5),
+          // SizedBox(height: 5),
           Text(
             "17",
             style: TextStyle(
               color: Colors.white,
-              fontSize: 18,
+              fontSize: 23,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -120,8 +120,8 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
       builder: (context, setState) {
         return Center(
           child: Container(
-            width: 180,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            width: 200,
+            padding: const EdgeInsets.symmetric(horizontal: 27, vertical: 8.5),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
               gradient: LinearGradient(
@@ -159,7 +159,7 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
 
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
                 ),
 

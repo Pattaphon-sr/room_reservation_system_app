@@ -111,6 +111,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                           Expanded(
@@ -302,11 +303,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               const SizedBox(height: 15),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
+                children: [
                   Text(
                     "FLOOR LIST",
                     style: TextStyle(
-                      color: Colors.grey,
+                      color: Colors.grey[700],
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -314,7 +315,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   Text(
                     "See All",
                     style: TextStyle(
-                      color: Colors.teal,
+                      color: Colors.grey[700],
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),

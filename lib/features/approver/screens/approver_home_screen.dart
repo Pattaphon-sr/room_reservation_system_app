@@ -73,7 +73,7 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
                     border: Border.all(color: Colors.white, width: 2),
                   ),
                 ),
-                const SizedBox(width: 40),
+                const SizedBox(width: 30),
                 Text(
                   count,
                   style: TextStyle(
@@ -116,11 +116,11 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 50),
+              const SizedBox(height: 40),
               Text(
                 'Dashboard',
                 style: TextStyle(
-                  fontSize: 25,
+                  fontSize: 35,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
@@ -220,11 +220,11 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
               const SizedBox(height: 15),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
+                children: [
                   Text(
                     "FLOOR LIST",
                     style: TextStyle(
-                      color: Colors.grey,
+                      color: Colors.grey[700],
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -232,7 +232,7 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
                   Text(
                     "See All",
                     style: TextStyle(
-                      color: Colors.teal,
+                      color: Colors.grey[700],
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
