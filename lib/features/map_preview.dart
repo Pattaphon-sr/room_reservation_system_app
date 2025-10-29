@@ -1,8 +1,10 @@
 import 'dart:math';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:room_reservation_system_app/data/cells_seed.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
+import 'package:room_reservation_system_app/shared/widgets/maps/map_types.dart';
 
 class MapPreview extends StatefulWidget {
   const MapPreview({super.key});
@@ -22,7 +24,10 @@ class _MapPreviewState extends State<MapPreview> {
       backgroundColor: AppColors.roomBlue,
       body: Center(
         child: MapFloor(
-          role: MapRole.user,
+          floor: 5,
+          slotId: 'S1',
+          role: MapRole.staff,
+          cells: kCellsAll,
           onCellTap: (x, y, cell) {
             // debugPrint('tap ($x,$y) ${cell['type']} ${cell['roomNo'] ?? ''}');
             _showBookingPopup(cell);

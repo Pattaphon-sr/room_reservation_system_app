@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/features/auth/auth.dart';
-import 'package:room_reservation_system_app/features/free.dart';
+// import 'package:room_reservation_system_app/features/free.dart';
+import 'package:room_reservation_system_app/features/staff/screens/floor_editor_screen.dart';
 import 'features/test_screen.dart';
 import 'features/map_preview.dart';
 
@@ -19,8 +20,9 @@ class MyApp extends StatelessWidget {
       // home: InitialScreen(),
       // home: SignInScreen(),
       // home: SignUpScreen(),
+      home: FloorEditorScreen(),
+      // home: MapPreview(),
       // home: FloorEditorScreen(),
-      home: MapPreview(),
     );
   }
 }

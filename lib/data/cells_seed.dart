@@ -1,4 +1,5 @@
-import 'package:room_reservation_system_app/shared/widgets/maps/map_floor.dart';
+// lib/data/cells_seed.dart
+import 'package:room_reservation_system_app/shared/widgets/maps/map_types.dart';
 
 // ---------- Slots (ช่วงเวลา) ----------
 const List<Map<String, String>> kTimeSlots = [
