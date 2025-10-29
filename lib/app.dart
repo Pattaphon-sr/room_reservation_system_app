@@ -13,6 +13,8 @@ class App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Room Reservation',
       home: const InitialScreen(),
+      // home: const AccountPage(),
+      // home: const Booking(),
       // home: TestScreen(),
       // home: FloorEditorScreen(),
     );
