@@ -74,28 +74,13 @@ class _DashboardApproverState extends State<DashboardApprover> {
                   ),
                 ),
                 const SizedBox(width: 40),
-                Stack(
-                  children: [
-                    Text(
-                      count,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        foreground: Paint()
-                          ..style = PaintingStyle.stroke
-                          ..strokeWidth = 3
-                          ..color = Colors.black,
-                      ),
-                    ),
-                    Text(
-                      count,
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                Text(
+                  count,
+                  style: TextStyle(
+                    fontSize: 20,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -145,10 +130,10 @@ class _DashboardApproverState extends State<DashboardApprover> {
                 spacing: 20,
                 runSpacing: 20,
                 children: [
-                  _buildStatCard(Colors.green, '8', 'Free slots'),
-                  _buildStatCard(Colors.amber, '4', 'Pending slots'),
-                  _buildStatCard(Colors.blue, '3', 'Booked Slots'),
-                  _buildStatCard(Colors.red, '2', 'Disabled rooms'),
+                  _buildStatCard(AppColors.success, '30', 'Free slots'),
+                  _buildStatCard(AppColors.warning, '18', 'Pending slots'),
+                  _buildStatCard(AppColors.primary, '9', 'Booked Slots'),
+                  _buildStatCard(AppColors.danger, '9', 'Disabled rooms'),
                 ],
               ),
               const SizedBox(height: 15),
