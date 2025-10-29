@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
 
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
+import 'package:room_reservation_system_app/features/user/root.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 
 class UserHomeScreen extends StatefulWidget {
@@ -47,16 +48,19 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     })
     panelBuilder,
   ) {
-    return panelBuilder(
-      width: 80,
-      height: 80,
-      child: Center(
-        child: Image.asset(
-          imageAsset,
-          height: 60,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) =>
-              const Icon(Icons.apartment, color: Colors.white, size: 20),
+    return GestureDetector(
+      onTap: () => UserRoot.goTo(context, 1),
+      child: panelBuilder(
+        width: 80,
+        height: 80,
+        child: Center(
+          child: Image.asset(
+            imageAsset,
+            height: 60,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.apartment, color: Colors.white, size: 20),
+          ),
         ),
       ),
     );
@@ -210,7 +214,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               const SizedBox(height: 30),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
+                children: [
                   Text(
                     "DAILY RESERVATION",
                     style: TextStyle(
@@ -219,12 +223,15 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Text(
-                    "See All",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
+                  GestureDetector(
+                    onTap: () => UserRoot.goTo(context, 2),
+                    child: Text(
+                      "See All",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -312,12 +319,15 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Text(
-                    "See All",
-                    style: TextStyle(
-                      color: Colors.grey[700],
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
+                  GestureDetector(
+                    onTap: () => UserRoot.goTo(context, 1),
+                    child: Text(
+                      "See All",
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],

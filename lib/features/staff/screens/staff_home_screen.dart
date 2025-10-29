@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
+import 'package:room_reservation_system_app/features/staff/root.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 
 class StaffHomeScreen extends StatefulWidget {
@@ -77,16 +77,19 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
     })
     panelBuilder,
   ) {
-    return panelBuilder(
-      width: 80,
-      height: 80,
-      child: Center(
-        child: Image.asset(
-          imageAsset,
-          height: 60,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) =>
-              const Icon(Icons.apartment, color: Colors.white, size: 20),
+    return GestureDetector(
+      onTap: () => StaffRoot.goTo(context, 1),
+      child: panelBuilder(
+        width: 80,
+        height: 80,
+        child: Center(
+          child: Image.asset(
+            imageAsset,
+            height: 60,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.apartment, color: Colors.white, size: 20),
+          ),
         ),
       ),
     );
@@ -229,7 +232,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
+                    children: [
                       Text(
                         "FLOOR LIST",
                         style: TextStyle(
@@ -238,12 +241,15 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        "See All",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
+                      GestureDetector(
+                        onTap: () => StaffRoot.goTo(context, 1),
+                        child: Text(
+                          "See All",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],

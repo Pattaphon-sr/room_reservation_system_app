@@ -133,17 +133,17 @@ class _ApproverAccountScreenState extends State<ApproverAccountScreen> {
               AppButton.solid(
                 label: 'Sign Out',
                 onPressed: () async {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SignUpScreen()),
-                    (route) => false,
+                  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const InitialScreen()),
+                    (_) => false,
                   );
                 },
               ),
               const SizedBox(height: 12),
               AppButton.outline(
                 label: 'Cancel',
-                onPressed: () => Navigator.pop(context),
+                onPressed: () =>
+                    Navigator.of(context, rootNavigator: true).pop(),
               ),
             ],
           ),

@@ -42,20 +42,20 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
       slot: '08:00-10:00',
       dateTime: DateTime(2025, 10, 22, 7, 48),
     ),
-    ActivityItem(
-      status: ApprovalStatus.pending,
-      floor: 'Floor4',
-      roomCode: 'R402',
-      slot: '10:00-12:00',
-      dateTime: DateTime(2025, 10, 21, 9, 20),
-    ),
-    ActivityItem(
-      status: ApprovalStatus.pending,
-      floor: 'Floor3',
-      roomCode: 'R303',
-      slot: '13:00-15:00',
-      dateTime: DateTime(2025, 10, 20, 14, 10),
-    ),
+    // ActivityItem(
+    //   status: ApprovalStatus.pending,
+    //   floor: 'Floor4',
+    //   roomCode: 'R402',
+    //   slot: '10:00-12:00',
+    //   dateTime: DateTime(2025, 10, 21, 9, 20),
+    // ),
+    // ActivityItem(
+    //   status: ApprovalStatus.pending,
+    //   floor: 'Floor3',
+    //   roomCode: 'R303',
+    //   slot: '13:00-15:00',
+    //   dateTime: DateTime(2025, 10, 20, 14, 10),
+    // ),
     ActivityItem(
       status: ApprovalStatus.approved,
       floor: 'Floor5',
@@ -251,7 +251,7 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
@@ -259,7 +259,7 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 35,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.bold,
                     letterSpacing: -0.3,
                   ),
                 ),

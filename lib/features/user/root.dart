@@ -8,6 +8,20 @@ import 'package:room_reservation_system_app/features/user/screens/user_home_scre
 
 class UserRoot extends StatefulWidget {
   const UserRoot({super.key});
+
+  /// เรียกจากที่ไหนก็ได้: สลับไปยังแท็บ [index]
+  /// ถ้าให้ [route] มาด้วย จะ push หน้านั้นบนสแตกของแท็บเป้าหมาย
+  static void goTo(
+    BuildContext context,
+    int index, {
+    String? route,
+    Object? args,
+    bool clearStack = false,
+  }) {
+    final st = context.findAncestorStateOfType<_UserRootState>();
+    st?._switchTo(index, route: route, args: args, clearStack: clearStack);
+  }
+
   @override
   State<UserRoot> createState() => _UserRootState();
 }
@@ -27,6 +41,25 @@ class _UserRootState extends State<UserRoot> {
       return false;
     }
     return true;
+  }
+
+  void _switchTo(
+    int i, {
+    String? route,
+    Object? args,
+    bool clearStack = false,
+  }) {
+    setState(() => _index = i);
+
+    if (route != null) {
+      final nav = _navKeys[i].currentState;
+      if (nav == null) return;
+
+      if (clearStack) {
+        nav.popUntil((r) => r.isFirst);
+      }
+      nav.pushNamed(route, arguments: args);
+    }
   }
 
   @override

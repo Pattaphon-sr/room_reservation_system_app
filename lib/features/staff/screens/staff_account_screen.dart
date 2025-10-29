@@ -132,17 +132,17 @@ class _StaffAccountScreenState extends State<StaffAccountScreen> {
               AppButton.solid(
                 label: 'Sign Out',
                 onPressed: () async {
-                  Navigator.pop(context);
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const SignInScreen()),
-                    (route) => false,
+                  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const InitialScreen()),
+                    (_) => false,
                   );
                 },
               ),
               const SizedBox(height: 12),
               AppButton.outline(
                 label: 'Cancel',
-                onPressed: () => Navigator.pop(context),
+                onPressed: () =>
+                    Navigator.of(context, rootNavigator: true).pop(),
               ),
             ],
           ),

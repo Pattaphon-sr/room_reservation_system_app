@@ -248,7 +248,7 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
@@ -256,7 +256,7 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 35,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.bold,
                     letterSpacing: -0.3,
                   ),
                 ),
@@ -323,10 +323,7 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [
-                        Color.fromARGB(255, 255, 255, 255),
-                        Color.fromARGB(255, 255, 255, 255),
-                      ],
+                      colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
                     ),
                     boxShadow: [
                       BoxShadow(

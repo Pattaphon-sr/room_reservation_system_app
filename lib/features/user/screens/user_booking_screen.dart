@@ -336,7 +336,7 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
                 AppButton.solid(
                   label: 'Confirm',
                   onPressed: () async {
-                    Navigator.pop(context);
+                    Navigator.of(context, rootNavigator: true).pop();
                     final ok = await _submitReservation(
                       roomNo: roomNo,
                       slot: slotLabel,
@@ -349,7 +349,8 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
                 const SizedBox(height: 14),
                 AppButton.outline(
                   label: 'Cancel',
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () =>
+                      Navigator.of(context, rootNavigator: true).pop(),
                 ),
               ],
             ),

@@ -5,9 +5,23 @@ import 'package:room_reservation_system_app/features/approver/screens/approver_a
 import 'package:room_reservation_system_app/features/approver/screens/approver_booking_screen.dart';
 import 'package:room_reservation_system_app/features/approver/screens/approver_history_screen.dart';
 import 'package:room_reservation_system_app/features/approver/screens/approver_home_screen.dart';
+import 'package:room_reservation_system_app/features/approver/screens/approver_request_screen.dart';
 
 class ApproverRoot extends StatefulWidget {
   const ApproverRoot({super.key});
+
+  /// เรียกจากที่ไหนก็ได้เพื่อสลับแท็บของ Approver
+  static void goTo(
+    BuildContext context,
+    int index, {
+    String? route,
+    Object? args,
+    bool clearStack = false,
+  }) {
+    final st = context.findAncestorStateOfType<_ApproverRootState>();
+    st?._switchTo(index, route: route, args: args, clearStack: clearStack);
+  }
+
   @override
   State<ApproverRoot> createState() => _ApproverRootState();
 }
@@ -27,6 +41,21 @@ class _ApproverRootState extends State<ApproverRoot> {
       return false;
     }
     return true;
+  }
+
+  void _switchTo(
+    int i, {
+    String? route,
+    Object? args,
+    bool clearStack = false,
+  }) {
+    setState(() => _index = i);
+    if (route != null) {
+      final nav = _navKeys[i].currentState;
+      if (nav == null) return;
+      if (clearStack) nav.popUntil((r) => r.isFirst);
+      nav.pushNamed(route, arguments: args);
+    }
   }
 
   @override
@@ -49,13 +78,13 @@ class _ApproverRootState extends State<ApproverRoot> {
             ),
             NestedTabNavigator(
               navKey: _navKeys[2],
-              initialPageBuilder: (_) => const ApproverHistoryScreen(),
-              routes: {'/': (_) => const ApproverHistoryScreen()},
+              initialPageBuilder: (_) => const ApproverRequestScreen(),
+              routes: {'/': (_) => const ApproverRequestScreen()},
             ),
             NestedTabNavigator(
               navKey: _navKeys[3],
-              initialPageBuilder: (_) => const ApproverAccountScreen(),
-              routes: {'/': (_) => const ApproverAccountScreen()},
+              initialPageBuilder: (_) => const ApproverHistoryScreen(),
+              routes: {'/': (_) => const ApproverHistoryScreen()},
             ),
             NestedTabNavigator(
               navKey: _navKeys[4],

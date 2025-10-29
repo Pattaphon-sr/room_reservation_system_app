@@ -166,11 +166,12 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
       actions: [
         AppButton.outline(
           label: 'Cancel',
-          onPressed: () => Navigator.pop(context, false),
+          onPressed: () =>
+              Navigator.of(context, rootNavigator: true).pop(false),
         ),
         AppButton.solid(
           label: 'Remove',
-          onPressed: () => Navigator.pop(context, true),
+          onPressed: () => Navigator.of(context, rootNavigator: true).pop(true),
         ),
       ],
     );
@@ -360,12 +361,12 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
       actions: [
         AppButton.outline(
           label: 'Close',
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
         ),
         AppButton.solid(
           label: 'OK',
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.of(context, rootNavigator: true).pop();
             _loadWorking(); // รีโหลดจาก seed ให้เห็นผลล่าสุด
           },
         ),

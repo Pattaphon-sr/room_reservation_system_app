@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
@@ -73,7 +72,6 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
         ),
       ),
       actions: [
-        
         Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -81,14 +79,14 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
             AppButton.solid(
               label: 'Confirm',
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.of(context, rootNavigator: true).pop();
                 _showApproveSuccessDialog(context);
               },
             ),
             const SizedBox(height: 12),
             AppButton.outline(
               label: 'Cancel',
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
             ),
           ],
         ),
@@ -124,7 +122,6 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
         ),
       ),
       actions: [
-        
         Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -134,7 +131,8 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
                 width: 120,
                 child: AppButton.solid(
                   label: 'Close',
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () =>
+                      Navigator.of(context, rootNavigator: true).pop(),
                 ),
               ),
             ),
@@ -183,7 +181,6 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
         ),
       ),
       actions: [
-        
         Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -191,14 +188,14 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
             AppButton.solid(
               label: 'Submit',
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.of(context, rootNavigator: true).pop();
                 _showDisapproveSuccessDialog(context);
               },
             ),
             const SizedBox(height: 12),
             AppButton.outline(
               label: 'Cancel',
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
             ),
           ],
         ),
@@ -234,7 +231,6 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
         ),
       ),
       actions: [
-        
         Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -244,7 +240,8 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
                 width: 120,
                 child: AppButton.solid(
                   label: 'Close',
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () =>
+                      Navigator.of(context, rootNavigator: true).pop(),
                 ),
               ),
             ),
@@ -274,24 +271,23 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 24),
+              const SizedBox(height: 40),
               const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0),
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
                   'Room Request',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 25,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 35,
+                    fontWeight: FontWeight.bold,
                     letterSpacing: -0.3,
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 30),
 
-              
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(28),
@@ -312,12 +308,10 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
                     decoration: InputDecoration(
                       hintText: 'Search ...',
                       hintStyle: const TextStyle(color: Colors.white70),
-                      prefixIcon:
-                          const Icon(Icons.search, color: Colors.white),
+                      prefixIcon: const Icon(Icons.search, color: Colors.white),
                       filled: true,
                       fillColor: const Color(0x334A74A8),
-                      contentPadding:
-                          const EdgeInsets.symmetric(vertical: 16),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(28),
                         borderSide: BorderSide(
@@ -436,8 +430,7 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.redAccent,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
                                   onPressed: () =>
@@ -459,8 +452,7 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.teal,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
                                   onPressed: () =>

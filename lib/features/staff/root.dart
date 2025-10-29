@@ -8,6 +8,19 @@ import 'package:room_reservation_system_app/features/staff/screens/staff_history
 
 class StaffRoot extends StatefulWidget {
   const StaffRoot({super.key});
+
+  /// เรียกจากที่ไหนก็ได้เพื่อสลับแท็บของ Staff
+  static void goTo(
+    BuildContext context,
+    int index, {
+    String? route,
+    Object? args,
+    bool clearStack = false,
+  }) {
+    final st = context.findAncestorStateOfType<_StaffRootState>();
+    st?._switchTo(index, route: route, args: args, clearStack: clearStack);
+  }
+
   @override
   State<StaffRoot> createState() => _StaffRootState();
 }
@@ -27,6 +40,21 @@ class _StaffRootState extends State<StaffRoot> {
       return false;
     }
     return true;
+  }
+
+  void _switchTo(
+    int i, {
+    String? route,
+    Object? args,
+    bool clearStack = false,
+  }) {
+    setState(() => _index = i);
+    if (route != null) {
+      final nav = _navKeys[i].currentState;
+      if (nav == null) return;
+      if (clearStack) nav.popUntil((r) => r.isFirst);
+      nav.pushNamed(route, arguments: args);
+    }
   }
 
   @override

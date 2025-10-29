@@ -263,7 +263,7 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
@@ -271,7 +271,7 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 35,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),

@@ -18,20 +18,18 @@ class App extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Room Reservation',
-      // home: const InitialScreen(),
-      //home: MapPreview(),
-      //home: UserBookingScreen(),
-      //home: ApproverBookingScreen(),
-      //home: StaffBookingScreen(),
       home: const InitialScreen(),
-      // home: const MapPreview(),
+      // home: MapPreview(),
+      // home: UserBookingScreen(),
+      // home: StaffBookingScreen(),
       // home: const AccountPage(),
       // home: const Booking(),
       // home: TestScreen(),
       // home: FloorEditorScreen(),
-      //  home:ApproverRequestScreen(),
-      // home:ApproverAccountScreen(),
+      // home: ApproverBookingScreen(),
+      // home: ApproverAccountScreen(),
       // home: ApproverHistoryScreen(),
+      // home: ApproverRequestScreen(),
     );
   }
 }
