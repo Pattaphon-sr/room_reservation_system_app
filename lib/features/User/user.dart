@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
 
-// --------------------- MODEL ---------------------
+/// ===================== MODEL =====================
 enum ApprovalStatus { pending, approved, rejected }
 
 class ActivityItem {
@@ -11,6 +11,7 @@ class ActivityItem {
   final String slot;
   final DateTime dateTime;
   final String? note;
+
   ActivityItem({
     required this.status,
     required this.floor,
@@ -21,7 +22,7 @@ class ActivityItem {
   });
 }
 
-// --------------------- PAGE ---------------------
+/// ===================== PAGE =====================
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
   @override
@@ -31,8 +32,9 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   final TextEditingController _search = TextEditingController();
 
-  // mock data
+  /// ---- Mock data (ตัวอย่าง) รวม Oct & Sep 2025 ----
   final List<ActivityItem> _items = [
+    // October 2025
     ActivityItem(
       status: ApprovalStatus.pending,
       floor: 'Floor5',
@@ -78,22 +80,22 @@ class _HistoryPageState extends State<HistoryPage> {
     ),
     ActivityItem(
       status: ApprovalStatus.approved,
-      floor: 'Floor2',
-      roomCode: 'R205',
+      floor: 'Floor5',
+      roomCode: 'R505',
       slot: '09:00-11:00',
       dateTime: DateTime(2025, 10, 16, 9, 12),
     ),
     ActivityItem(
       status: ApprovalStatus.approved,
-      floor: 'Floor1',
-      roomCode: 'R102',
+      floor: 'Floor4',
+      roomCode: 'R402',
       slot: '13:00-15:00',
       dateTime: DateTime(2025, 10, 15, 13, 45),
     ),
     ActivityItem(
       status: ApprovalStatus.rejected,
-      floor: 'Floor2',
-      roomCode: 'R207',
+      floor: 'Floor3',
+      roomCode: 'R307',
       slot: '10:00-12:00',
       dateTime: DateTime(2025, 10, 14, 10, 33),
       note: 'Room under maintenance',
@@ -105,24 +107,108 @@ class _HistoryPageState extends State<HistoryPage> {
       slot: '14:00-16:00',
       dateTime: DateTime(2025, 10, 13, 14, 55),
     ),
+
+    // September 2025 (ตัวอย่างเดือนก่อนหน้า)
+    ActivityItem(
+      status: ApprovalStatus.approved,
+      floor: 'Floor5',
+      roomCode: 'R501',
+      slot: '08:00-10:00',
+      dateTime: DateTime(2025, 9, 27, 7, 39),
+    ),
+    ActivityItem(
+      status: ApprovalStatus.approved,
+      floor: 'Floor4',
+      roomCode: 'R408',
+      slot: '10:00-12:00',
+      dateTime: DateTime(2025, 9, 13, 10, 48),
+    ),
+    ActivityItem(
+      status: ApprovalStatus.rejected,
+      floor: 'Floor4',
+      roomCode: 'R407',
+      slot: '09:00-11:00',
+      dateTime: DateTime(2025, 9, 5, 9, 12),
+      note: 'Room under maintenance',
+    ),
   ];
+
+  /// ============ Helpers: Group by Month-Year ============
+  /// คืนค่ากลุ่มรายการตามเดือน-ปี (ใหม่ → เก่า)
+  List<MapEntry<String, List<ActivityItem>>> _groupByMonth(
+      List<ActivityItem> items) {
+    final map = <String, List<ActivityItem>>{};
+    for (final it in items) {
+      final key = '${it.dateTime.year}-${it.dateTime.month.toString().padLeft(2, '0')}';
+      (map[key] ??= []).add(it);
+    }
+
+    // sort รายการในแต่ละเดือน (ใหม่ → เก่า)
+    for (final list in map.values) {
+      list.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    }
+
+    // sort คีย์เดือน (ใหม่ → เก่า)
+    final sortedKeys = map.keys.toList()
+      ..sort((a, b) => b.compareTo(a)); // yyyy-mm string works for lexicographic
+
+    // คงลำดับด้วย SplayTree/LinkedHashMap ก็ได้ ที่นี่แปลงเป็น list ของ entries
+    final out = <MapEntry<String, List<ActivityItem>>>[];
+    for (final k in sortedKeys) {
+      out.add(MapEntry(k, map[k]!));
+    }
+    return out;
+  }
+
+  String _monthYearLabel(DateTime dt) {
+    const months = [
+      'January','February','March','April','May','June',
+      'July','August','September','October','November','December'
+    ];
+    return '${months[dt.month - 1]} ${dt.year}';
+  }
+
+  /// สร้าง Section รายเดือนอัตโนมัติ
+  List<Widget> _buildSectionByMonth({
+    required String sectionTitle,
+    required List<ActivityItem> items,
+    Color? titleColor,
+  }) {
+    final children = <Widget>[];
+    children.add(_SectionHeader(title: sectionTitle, color: titleColor));
+    children.add(const SizedBox(height: 10));
+
+    if (items.isEmpty) {
+      children.add(const _Empty(text: 'No data'));
+      return children;
+    }
+
+    final groups = _groupByMonth(items); // ใหม่ → เก่า
+    for (final g in groups) {
+      // ใช้วันที่ของรายการแรกในกลุ่มเพื่อขึ้นหัวเดือน
+      children.add(_MonthLabel(text: _monthYearLabel(g.value.first.dateTime)));
+      children.add(const SizedBox(height: 8));
+      children.addAll(_tilesWithDividers(g.value));
+      children.add(const SizedBox(height: 12));
+    }
+    return children;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final query = _search.text.trim().toLowerCase();
+    final q = _search.text.trim().toLowerCase();
+
+    // Filter (ค้นหา floor/room/slot/note)
     final filtered = _items.where((e) {
-      if (query.isEmpty) return true;
-      final hay = '${e.floor} ${e.roomCode} ${e.slot} ${(e.note ?? '')}'
-          .toLowerCase();
-      return hay.contains(query);
+      if (q.isEmpty) return true;
+      final hay = '${e.floor} ${e.roomCode} ${e.slot} ${e.note ?? ''}'.toLowerCase();
+      return hay.contains(q);
     }).toList();
 
-    final pending = filtered
-        .where((e) => e.status == ApprovalStatus.pending)
-        .toList();
-    final done =
-        filtered.where((e) => e.status != ApprovalStatus.pending).toList()
-          ..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // newest → oldest
+    // แยก Pending / Done
+    final pending = filtered.where((e) => e.status == ApprovalStatus.pending).toList();
+    final done = filtered.where((e) => e.status != ApprovalStatus.pending).toList()
+      ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
 
     return Container(
       decoration: BoxDecoration(
@@ -206,65 +292,66 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
               const SizedBox(height: 16),
 
-              // Rounded container with light gradient
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(26),
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0xFFF8FBFF), // almost white with cool tone
-                        Color(0xFFEFF7FF), // very light blue bottom
+                // Rounded container with light gradient
+                Expanded(
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color(0xFFF8FBFF), // almost white with cool tone
+                          Color(0xFFEFF7FF), // very light blue bottom
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 24,
+                          spreadRadius: -8,
+                          color: Colors.black26,
+                          offset: Offset(0, -6),
+                        ),
                       ],
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 24,
-                        spreadRadius: -8,
-                        color: Colors.black26,
-                        offset: Offset(0, -6),
-                      ),
-                    ],
-                  ),
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                    children: [
-                      // Pending
-                      const _SectionHeader(
-                        title: 'Pending Approval',
-                        color: Color(0xFFF5A623),
-                      ),
-                      const SizedBox(height: 10),
-                      const _MonthLabel(text: 'October 2025'),
-                      const SizedBox(height: 8),
-                      if (pending.isEmpty)
-                        const _Empty(text: 'No pending requests'),
-                      ..._tilesWithDividers(pending),
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                      children: [
+                        // Pending
+                        const _SectionHeader(
+                          title: 'Pending Approval',
+                          color: Color(0xFFF5A623),
+                        ),
+                        const SizedBox(height: 10),
+                        const _MonthLabel(text: 'October 2025'),
+                        const SizedBox(height: 8),
+                        if (pending.isEmpty)
+                          const _Empty(text: 'No pending requests'),
+                        ..._tilesWithDividers(pending),
 
                       const SizedBox(height: 18),
 
-                      // Done
-                      const _SectionHeader(title: 'Done'),
-                      const SizedBox(height: 10),
-                      const _MonthLabel(text: 'October 2025'),
-                      const SizedBox(height: 8),
-                      if (done.isEmpty) const _Empty(text: 'No history yet'),
-                      ..._tilesWithDividers(done),
-                    ],
+                        // Done
+                        const _SectionHeader(title: 'Done'),
+                        const SizedBox(height: 10),
+                        const _MonthLabel(text: 'October 2025'),
+                        const SizedBox(height: 8),
+                        if (done.isEmpty)
+                          const _Empty(text: 'No history yet'),
+                        ..._tilesWithDividers(done),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
+  /// สร้างรายการ + Divider คั่นแถว
   static List<Widget> _tilesWithDividers(List<ActivityItem> items) {
     final out = <Widget>[];
     for (var i = 0; i < items.length; i++) {
@@ -279,7 +366,7 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 }
 
-// --------------------- SMALL WIDGETS ---------------------
+/// ===================== SMALL WIDGETS =====================
 class _SectionHeader extends StatelessWidget {
   final String title;
   final Color? color;
@@ -306,7 +393,7 @@ class _MonthLabel extends StatelessWidget {
       text,
       style: const TextStyle(
         color: Color(0xFF9AA1A9),
-        fontSize: 14,
+        fontSize: 20,
         fontWeight: FontWeight.w600,
       ),
     );
@@ -332,11 +419,11 @@ class _ActivityTile extends StatelessWidget {
   Color get _statusColor {
     switch (item.status) {
       case ApprovalStatus.pending:
-        return const Color(0xFFF05A28); // orange
+        return const Color(0xFFF5A623); // orange
       case ApprovalStatus.approved:
-        return const Color(0xFF22A657); // green
+        return const Color(0xFF399918); // green
       case ApprovalStatus.rejected:
-        return const Color(0xFFE53935); // red
+        return const Color(0xFFE62727); // red
     }
   }
 
@@ -360,7 +447,7 @@ class _ActivityTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row
+          // แถวบน
           Row(
             children: [
               Text(
@@ -384,7 +471,7 @@ class _ActivityTile extends StatelessWidget {
                 item.roomCode,
                 style: TextStyle(
                   color: item.status == ApprovalStatus.approved
-                      ? const Color(0xFF22A657)
+                      ? const Color(0xFF399918)
                       : Colors.black87,
                   fontWeight: FontWeight.w800,
                 ),
@@ -392,23 +479,21 @@ class _ActivityTile extends StatelessWidget {
             ],
           ),
 
-          if (item.status == ApprovalStatus.rejected &&
-              (item.note ?? '').isNotEmpty)
+          if (item.status == ApprovalStatus.rejected && (item.note ?? '').isNotEmpty)
             const SizedBox(height: 4),
 
-          if (item.status == ApprovalStatus.rejected &&
-              (item.note ?? '').isNotEmpty)
+          if (item.status == ApprovalStatus.rejected && (item.note ?? '').isNotEmpty)
             Text(
               item.note!,
               style: const TextStyle(
-                color: Color(0xFFE53935),
+                color: Color(0xFFE62727),
                 fontWeight: FontWeight.w600,
               ),
             ),
 
           const SizedBox(height: 4),
 
-          // Bottom row
+          // แถวล่าง
           Row(
             children: [
               RichText(
@@ -417,7 +502,7 @@ class _ActivityTile extends StatelessWidget {
                   style: const TextStyle(
                     color: Color(0xFF6A6F77),
                     fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                    fontSize: 15,
                   ),
                   children: [
                     TextSpan(
