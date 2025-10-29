@@ -12,7 +12,8 @@ class App extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Room Reservation',
-      home: const InitialScreen(),
+      // home: const InitialScreen(),
+      home: const MapPreview(),
       // home: const AccountPage(),
       // home: const Booking(),
       // home: TestScreen(),

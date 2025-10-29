@@ -26,7 +26,7 @@ class _MapPreviewState extends State<MapPreview> {
         child: MapFloor(
           floor: 5,
           slotId: 'S1',
-          role: MapRole.staff,
+          role: MapRole.user,
           cells: kCellsAll,
           onCellTap: (x, y, cell) {
             // debugPrint('tap ($x,$y) ${cell['type']} ${cell['roomNo'] ?? ''}');
