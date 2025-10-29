@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/data/cells_seed.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart'; // AppButton, showAirDialog
 import 'package:room_reservation_system_app/shared/widgets/maps/map_types.dart';
-import 'package:room_reservation_system_app/shared/widgets/maps/map_floor.dart';
 
 class FloorEditorScreen extends StatefulWidget {
   const FloorEditorScreen({
@@ -703,10 +702,7 @@ class _EditRulesScreen extends StatelessWidget {
       _RuleItem(
         icon: Icons.grid_on_rounded,
         title: 'ชนิดช่อง (Cell Types)',
-        details: [
-          'empty, corridor, stair, decoration, room',
-          'เมื่อเลือกช่องว่าง (empty) → Toolbar ซ่อนปุ่ม Empty',
-        ],
+        details: ['empty, corridor, stair, decoration, room'],
       ),
       _RuleItem(
         icon: Icons.meeting_room_rounded,
