@@ -1,7 +1,7 @@
-// lib/screens/floor_editor_screen.dart
 import 'package:flutter/material.dart';
+import 'package:room_reservation_system_app/core/theme/app_colors.dart';
 import 'package:room_reservation_system_app/data/cells_seed.dart';
-import 'package:room_reservation_system_app/shared/widgets/widgets.dart'; // AppButton, showAirDialog
+import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/shared/widgets/maps/map_types.dart';
 
 class FloorEditorScreen extends StatefulWidget {
@@ -29,48 +29,12 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
   // ========= current selection & form =========
   Map<String, dynamic>? _selected; // cell object from "working"
   final _roomCtrl = TextEditingController();
-  RoomStatus _status =
-      RoomStatus.disabled; // ใช้เป็น "baseStatus" (Enable/Disable)
+
+  // ใช้ baseStatus จริง (free/disabled)
+  RoomStatus _status = RoomStatus.disabled;
 
   // ========= current tool (only for button highlight UI) =========
   CellType? _lastToolPressed;
-
-  // ---------- BaseStatus helpers ----------
-  RoomStatus _toBaseStatus(RoomStatus? visual) {
-    return (visual == RoomStatus.disabled)
-        ? RoomStatus.disabled
-        : RoomStatus.free;
-  }
-
-  // อัปเดต "baseStatus" ของ cell เดียวกัน (floor,x,y ตรงกัน) ในทุก slot
-  // - ช่องที่เป็น pending/reserved จะไม่ถูกแก้ (ปล่อยให้รออนุมัติ)
-  void _applyBaseStatusAllSlotsAt({
-    required int floorNo,
-    required int x,
-    required int y,
-    required RoomStatus newBase,
-  }) {
-    for (final c in kCellsAll) {
-      if (c['floor'] == floorNo &&
-          c['x'] == x &&
-          c['y'] == y &&
-          c['type'] == CellType.room) {
-        final st = c['status'] as RoomStatus?;
-        if (st == RoomStatus.pending || st == RoomStatus.reserved) {
-          continue;
-        }
-        c['status'] = newBase; // free/disabled
-      }
-    }
-    // sync working ปัจจุบันด้วย
-    for (final c in working) {
-      if (c['x'] == x && c['y'] == y && c['type'] == CellType.room) {
-        final st = c['status'] as RoomStatus?;
-        if (st == RoomStatus.pending || st == RoomStatus.reserved) continue;
-        c['status'] = newBase;
-      }
-    }
-  }
 
   @override
   void initState() {
@@ -88,8 +52,7 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
 
   // โหลด snapshot ของ floor/slot ปัจจุบันมาแก้
   void _loadWorking() {
-    working = kCellsAll
-        .where((c) => c['floor'] == floor && c['slotId'] == slotId)
+    working = buildCellsSlice(floor: floor, slotId: slotId)
         .map(
           (c) => {
             'floor': c['floor'],
@@ -99,7 +62,10 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
             'y': c['y'],
             'type': c['type'],
             if (c.containsKey('roomNo')) 'roomNo': c['roomNo'],
-            if (c.containsKey('status')) 'status': c['status'],
+            if (c.containsKey('baseStatus')) 'baseStatus': c['baseStatus'],
+            if (c.containsKey('bookingStatus'))
+              'bookingStatus': c['bookingStatus'],
+            if (c.containsKey('status')) 'status': c['status'], // display
           },
         )
         .toList();
@@ -118,9 +84,7 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
       working.firstWhere((e) => e['x'] == x && e['y'] == y);
 
   // ============ Selection & Form sync ============
-
   void _selectCell(Map<String, dynamic> cell) {
-    // toggle: กด cell เดิมซ้ำ → ยกเลิกการเลือก
     if (identical(_selected, cell)) {
       _clearSelection();
       setState(() {});
@@ -128,7 +92,7 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
     }
 
     if (cell['type'] == CellType.room) {
-      final base = _toBaseStatus(cell['status'] as RoomStatus?);
+      final base = (cell['baseStatus'] as RoomStatus?) ?? RoomStatus.disabled;
       _status = base;
       _roomCtrl.text = (cell['roomNo'] ?? '—').toString();
     } else {
@@ -161,224 +125,256 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
   Future<bool> _confirmRemoveRoom() async {
     final ok = await showAirDialog<bool>(
       context,
-      title: 'Remove room?',
-      message: 'ห้องนี้จะถูกถอดออกและเปลี่ยนเป็นช่องว่าง (Empty)',
-      actions: [
-        AppButton.outline(
-          label: 'Cancel',
-          onPressed: () => Navigator.pop(context, false),
+      height: 400,
+      content: SizedBox(
+        height: 354,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 30),
+                  Center(
+                    child: Text(
+                      'Remove room?',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 32),
+                  Center(
+                    child: Text(
+                      'This room will be removed and to accommodate the gap. (Empty)',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AppButton.solid(
+                  label: 'Remove',
+                  backgroundColor: AppColors.danger,
+                  onPressed: () => Navigator.pop(context, true),
+                ),
+                const SizedBox(height: 14),
+                AppButton.outline(
+                  label: 'Cancel',
+                  onPressed: () => Navigator.pop(context, false),
+                ),
+              ],
+            ),
+          ],
         ),
-        AppButton.solid(
-          label: 'Remove',
-          onPressed: () => Navigator.pop(context, true),
-        ),
-      ],
+      ),
+      actions: const [SizedBox.shrink()],
     );
     return ok == true;
   }
 
-  // ================= NEW: Silent save helpers =================
+  // ================= Silent save helpers =================
   Future<void> _saveSliceSilently() async {
-    _writeBackWorkingSliceToSeed();
-    // TODO: ถ้ามี API จริง ให้เรียก persist ตรงนี้แบบไม่เด้ง dialog
-    // await roomApi.saveLayoutSlice(floor, slotId, working);
-    _loadWorking(); // reload working ให้เห็นผลล่าสุด
+    // ตอนนี้อัปเดตลง Base ทันทีผ่านฟังก์ชันใน data layer แล้ว
+    _loadWorking(); // reload slice
   }
 
-  /// ใช้เมื่อ action บน toolbar ทำให้ toolbar จะปิด (selection หาย)
   Future<void> _closeSelectionAndSave() async {
-    await _saveSliceSilently(); // เซฟก่อน
-    _clearSelection(); // แล้วค่อยปิด selection (toolbar จะหาย)
+    await _saveSliceSilently();
+    _clearSelection();
     setState(() {});
   }
-  // ============================================================
+  // ======================================================
 
   // ============ TOOL FLOW (กดแล้ว “ทำทันที”) ============
   Future<void> _onToolPress(CellType tool) async {
-    if (_selected == null) return; // ต้องมี cell ถูกเลือกก่อน
+    if (_selected == null) return;
 
     final cell = _selected!;
     final type = cell['type'] as CellType;
 
     setState(() => _lastToolPressed = tool);
 
-    // 1) เมื่อ select = empty
+    Future<void> _persistType(CellType newType, {String? roomNo}) async {
+      await updateBaseCellTypeAt(
+        floor: floor,
+        x: cell['x'] as int,
+        y: cell['y'] as int,
+        type: newType,
+        roomNo: roomNo,
+      );
+      await _closeSelectionAndSave();
+    }
+
+    // 1) select = empty
     if (type == CellType.empty) {
       if (tool == CellType.corridor ||
           tool == CellType.stair ||
           tool == CellType.decoration) {
-        cell
-          ..remove('roomNo')
-          ..remove('status')
-          ..['type'] = tool;
-        _selectCell(cell); // คง selection ให้เห็นปุ่มไฮไลต์
+        await _persistType(tool);
         return;
       }
       if (tool == CellType.room) {
-        cell['type'] = CellType.room;
-        cell['roomNo'] = _autoRoomNo(cell);
-        cell['status'] = RoomStatus.disabled;
-        _selectCell(cell);
+        final rn = _autoRoomNo(cell);
+        await _persistType(CellType.room, roomNo: rn);
         return;
       }
-      // tool == empty → (ซ่อนไม่ให้กดในกรณีนี้อยู่แล้ว)
       return;
     }
 
-    // 2) เมื่อ select = corridor / stair / decoration
+    // 2) select = corridor / stair / decoration
     if (type == CellType.corridor ||
         type == CellType.stair ||
         type == CellType.decoration) {
       if (tool == CellType.empty) {
-        // เปลี่ยนเป็น empty และยกเลิกการเลือก
-        cell
-          ..remove('roomNo')
-          ..remove('status')
-          ..['type'] = CellType.empty;
-
-        // ===== NEW: save ก่อนแล้วค่อยปิด toolbar =====
-        await _closeSelectionAndSave();
+        final ok = await _confirmRemoveRoom();
+        if (!ok) return;
+        await _persistType(CellType.empty);
         return;
       }
       if (tool == CellType.room) {
-        cell['type'] = CellType.room;
-        cell['roomNo'] = _autoRoomNo(cell);
-        cell['status'] = RoomStatus.disabled;
-        _selectCell(cell);
+        final rn = _autoRoomNo(cell);
+        await _persistType(CellType.room, roomNo: rn);
         return;
       }
       if (tool == CellType.corridor ||
           tool == CellType.stair ||
           tool == CellType.decoration) {
-        cell
-          ..remove('roomNo')
-          ..remove('status')
-          ..['type'] = tool;
-        _selectCell(cell);
+        await _persistType(tool);
         return;
       }
       return;
     }
 
-    // 3) เมื่อ select = room
+    // 3) select = room
     if (type == CellType.room) {
       if (tool == CellType.empty) {
-        // ขึ้น Air popup ยืนยันก่อนถอดห้อง
         final ok = await _confirmRemoveRoom();
         if (!ok) return;
-
-        cell
-          ..remove('roomNo')
-          ..remove('status')
-          ..['type'] = CellType.empty;
-
-        // ===== NEW: save ก่อนแล้วค่อยปิด toolbar =====
-        await _closeSelectionAndSave();
+        await _persistType(CellType.empty);
         return;
       }
       if (tool == CellType.room) {
-        // คง selection เพื่อแก้ฟอร์ม
+        // คง selection → แก้ฟอร์ม (ชื่อ/Enable-Disable)
         _selectCell(cell);
         return;
       }
       return;
-    }
-  }
-
-  // ============ เขียนชนิด cell ของ slice ปัจจุบันกลับเข้า seed ============
-  void _writeBackWorkingSliceToSeed() {
-    for (final w in working) {
-      final idx = kCellsAll.indexWhere(
-        (c) =>
-            c['floor'] == w['floor'] &&
-            c['slotId'] == w['slotId'] &&
-            c['x'] == w['x'] &&
-            c['y'] == w['y'],
-      );
-      if (idx == -1) continue;
-
-      final target = kCellsAll[idx];
-      // อัปเดต type
-      target['type'] = w['type'];
-
-      // จัดการ roomNo/status ให้ถูกต้องตามชนิด
-      if (w['type'] == CellType.room) {
-        if (w.containsKey('roomNo')) {
-          target['roomNo'] = w['roomNo'];
-        } else {
-          target.remove('roomNo');
-        }
-        if (w.containsKey('status')) {
-          target['status'] = w['status'];
-        } else {
-          target.remove('status');
-        }
-      } else {
-        // ไม่ใช่ห้อง → ลบคีย์ห้องทิ้ง
-        target.remove('roomNo');
-        target.remove('status');
-      }
     }
   }
 
   // ============ Confirm ============
-
   Future<void> _onConfirm() async {
-    // 1) ถ้าเลือกอยู่และเป็นห้อง → เขียนค่าฟอร์มกลับเข้า working ก่อน
+    // ถ้าเลือกเป็นห้อง → อัปเดตชื่อห้อง + baseStatus ข้ามทุก slot
     if (_selected != null && _selected!['type'] == CellType.room) {
-      _selected!['roomNo'] = _roomCtrl.text.trim().isEmpty
+      final x = _selected!['x'] as int;
+      final y = _selected!['y'] as int;
+
+      final newName = _roomCtrl.text.trim().isEmpty
           ? _autoRoomNo(_selected!)
           : _roomCtrl.text.trim();
 
+      // 1) sync room name ใน Base (ชนิดยังเป็น room)
+      await updateBaseCellTypeAt(
+        floor: floor,
+        x: x,
+        y: y,
+        type: CellType.room,
+        roomNo: newName,
+      );
+
+      // 2) อัปเดต BASE status (ทุก slot) โดยไม่แตะ reservations
       final newBase = (_status == RoomStatus.free)
           ? RoomStatus.free
           : RoomStatus.disabled;
-
-      // อัปเดตฐานทุกช่วงเวลาที่ตำแหน่งเดียวกัน (ยกเว้น pending/reserved)
-      _applyBaseStatusAllSlotsAt(
+      await applyBaseStatusAllSlotsAt(
         floorNo: floor,
-        x: _selected!['x'] as int,
-        y: _selected!['y'] as int,
+        x: x,
+        y: y,
         newBase: newBase,
       );
     }
 
-    // 2) เขียนชนิด cell ของ slice ปัจจุบัน (floor+slot) กลับเข้า seed
-    _writeBackWorkingSliceToSeed();
-
-    // 3) (ถ้ามี API) ตรงนี้คือจุดที่คุณเรียก service จริงเพื่อ persist
-    // await roomApi.saveLayoutSlice(floor, slotId, working);
-    // หรือส่ง diff เฉพาะห้องที่แก้
-
     await showAirDialog(
       context,
-      title: 'Apply changes?',
-      message:
-          'Floor: $floor\nTime: ${kTimeSlots.firstWhere((s) => s["id"] == slotId)["label"]}\n'
-          '• Saved current slice types (empty/corridor/stair/decoration/room)\n'
-          '• Updated BASE status across all time slots for the selected room (pending/reserved kept)',
-      actions: [
-        AppButton.outline(
-          label: 'Close',
-          onPressed: () => Navigator.pop(context),
+      height: 400,
+      content: SizedBox(
+        height: 354,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 20),
+                  Center(
+                    child: Text(
+                      'Apply changes?',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Floor: $floor\nTime: ${kTimeSlots.firstWhere((s) => s["id"] == slotId)["label"]}\n'
+                    '• Updated base types immediately (room/decoration/empty)\n'
+                    '• Updated BASE status across all time slots (pending/reserved kept)\n',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AppButton.solid(
+                  label: 'Confirm',
+                  onPressed: () async {
+                    // ปิด popup ยืนยันก่อน
+                    Navigator.pop(context);
+                  },
+                ),
+                const SizedBox(height: 14),
+                AppButton.outline(
+                  label: 'Cancel',
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ],
         ),
-        AppButton.solid(
-          label: 'OK',
-          onPressed: () {
-            Navigator.pop(context);
-            _loadWorking(); // รีโหลดจาก seed ให้เห็นผลล่าสุด
-          },
-        ),
-      ],
+      ),
+      actions: const [SizedBox.shrink()],
     );
   }
 
   // ============ Build ============
-
   @override
   Widget build(BuildContext context) {
     final hasSelection = _selected != null;
-    final showToolbar = hasSelection; // ไม่มี selection → ไม่โชว์ tool
+    final showToolbar = hasSelection;
     final showRoomForm = hasSelection && _selected!['type'] == CellType.room;
 
     return Scaffold(
@@ -386,7 +382,7 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
         title: Text('Edit (Floor $floor)'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.priority_high_rounded), // ปุ่มกฎการแก้ไข
+            icon: const Icon(Icons.priority_high_rounded),
             tooltip: 'Edit Rules',
             onPressed: () {
               Navigator.push(
@@ -449,6 +445,7 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
           ),
 
           const SizedBox(height: 6),
+
           // ===== แผนที่ (ใช้ MapFloor เดิม) =====
           MapFloor(
             role: MapRole.staff,
@@ -463,12 +460,21 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
 
           // ===== Toolbar (แสดงเมื่อมี selection เท่านั้น) =====
           const SizedBox(height: 8),
-          if (showToolbar) _toolBar(),
+          Container(
+            width: 310,
+            height: 66,
+
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFFDBDBDB),
+            ),
+            child: showToolbar ? _toolBar() : const SizedBox.shrink(),
+          ),
 
           // ===== Form (เฉพาะห้อง) =====
           if (showRoomForm)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              padding: const EdgeInsets.fromLTRB(25, 10, 25, 0),
               child: _roomForm(),
             ),
 
@@ -481,8 +487,8 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
                 children: [
                   Expanded(
                     child: AppButton.outline(
-                      outlineColor: Colors.amberAccent,
-                      foregroundColor: Colors.amberAccent,
+                      outlineColor: AppColors.danger,
+                      foregroundColor: AppColors.danger,
                       label: 'Cancel',
                       onPressed: () => _loadWorking(),
                     ),
@@ -497,16 +503,16 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
                 ],
               ),
             ),
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
   // ============ Widgets ============
-
   Widget _pill({required Widget child}) {
     return Container(
-      height: 36,
+      height: 42,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -524,47 +530,100 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
     );
   }
 
-  /// Toolbar จะเปลี่ยน “ปุ่มที่มีให้กด” ตามชนิดของ cell ที่เลือก
-  /// - select empty → ปุ่ม: **room, corridor, stair, decoration** (ซ่อน Empty)
-  /// - select corridor/stair/decoration → ปุ่ม: **empty, room, corridor, stair, decoration**
-  /// - select room → ปุ่ม: **empty, room** (และโชว์ฟอร์ม)
+  /// Toolbar ปรับปุ่มตามชนิด cell ที่เลือก
   Widget _toolBar() {
     final cell = _selected!;
     final type = cell['type'] as CellType;
 
-    // ชุดปุ่มเต็ม (รวม Empty)
     List<_ToolDef> allButtons = [
-      _ToolDef(CellType.empty, const Icon(Icons.add), 'Empty'),
-      _ToolDef(CellType.room, const Icon(Icons.meeting_room_rounded), 'Room'),
       _ToolDef(
-        CellType.corridor,
-        const Icon(Icons.view_agenda_rounded),
-        'Corridor',
+        CellType.room,
+        Container(
+          width: 35,
+          height: 46,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(5),
+            color: AppColors.roomBlue,
+          ),
+          child: Center(
+            child: Text(
+              'R',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+        'Room',
       ),
+      _ToolDef(CellType.corridor, const SizedBox.shrink(), 'Corridor'),
       _ToolDef(
         CellType.stair,
-        Image.asset('assets/icons/stairs.png', width: 24, height: 24),
+        LayoutBuilder(
+          builder: (_, c) {
+            return Image.asset(
+              'assets/icons/stairs.png',
+              width: 28,
+              fit: BoxFit.fitHeight,
+            );
+          },
+        ),
         'Stair',
       ),
       _ToolDef(
         CellType.decoration,
-        Image.asset('assets/icons/grass.png', width: 24, height: 24),
+        Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0x00000000), Color(0xFF3B3B1A)],
+              stops: [0.7, 0.99],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+          child: LayoutBuilder(
+            builder: (_, c) {
+              return Image.asset(
+                'assets/icons/grass.png',
+                width: 32,
+                height: 42,
+                fit: BoxFit.fitHeight,
+              );
+            },
+          ),
+        ),
         'Decoration',
+      ),
+
+      _ToolDef(
+        CellType.empty,
+        Container(
+          width: 35,
+          height: 46,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(5),
+            color: const Color(0xFFDBDBDB),
+            border: Border.all(color: AppColors.danger, width: 1),
+          ),
+          child: Center(
+            child: Image.asset('assets/icons/cross.png', width: 20, height: 20),
+          ),
+        ),
+        'Empty',
       ),
     ];
 
-    // กฎการแสดงผลปุ่ม
     late final List<_ToolDef> buttons;
     if (type == CellType.empty) {
-      // ซ่อน Empty เมื่อเลือก cell ว่าง
       buttons = allButtons.where((b) => b.type != CellType.empty).toList();
     } else if (type == CellType.room) {
-      // room → แสดงเฉพาะ empty, room
       buttons = allButtons
           .where((b) => b.type == CellType.empty || b.type == CellType.room)
           .toList();
     } else {
-      // corridor/stair/decoration → แสดงครบทุกปุ่ม
       buttons = allButtons;
     }
 
@@ -577,27 +636,22 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
         return Tooltip(
           message: b.tooltip,
           child: InkWell(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(5),
             onTap: () => _onToolPress(b.type),
             child: Container(
-              width: 46,
-              height: 40,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: 35,
+              height: 46,
+              margin: const EdgeInsets.symmetric(horizontal: 11),
               decoration: BoxDecoration(
-                color: active
-                    ? const Color(0xFF320A6B)
-                    : const Color(0xFFEDEFF2),
-                borderRadius: BorderRadius.circular(10),
+                color: AppColors.roomdecoration,
+                borderRadius: BorderRadius.circular(5),
                 border: active
-                    ? Border.all(color: const Color(0xFFBF8DFF), width: 2)
+                    ? Border.all(color: AppColors.iris, width: 2)
                     : null,
               ),
               child: Center(
                 child: IconTheme(
-                  data: IconThemeData(
-                    color: active ? Colors.white : const Color(0xFF43505A),
-                    size: 20,
-                  ),
+                  data: IconThemeData(color: const Color(0xFFFFFFFF), size: 20),
                   child: b.icon,
                 ),
               ),
@@ -651,11 +705,12 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
           alignment: Alignment.centerLeft,
           child: Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
           ),
         ),
         const SizedBox(height: 6),
         Container(
+          height: 52,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -710,7 +765,7 @@ class _EditRulesScreen extends StatelessWidget {
         details: [
           'สถานะบนแผนที่อาจเป็น free/pending/reserved/disabled',
           'สำหรับการแก้ฐาน (base) ใช้แค่ Enable=free / Disable=disabled',
-          'ถ้าบันทึกเป็น Disable → เซลล์เดียวกันตำแหน่งเดียวกัน “ทุกเวลา” จะถูกปิด (ยกเว้นรายการที่ยัง pending/reserved จะคงไว้)',
+          'Disable จะปิดทุก slot ของตำแหน่งนั้น (pending/reserved คงไว้)',
         ],
       ),
       _RuleItem(
@@ -725,8 +780,8 @@ class _EditRulesScreen extends StatelessWidget {
         icon: Icons.save_outlined,
         title: 'การบันทึก (Confirm)',
         details: [
-          'บันทึกจะเขียนชนิดช่องของ slice ปัจจุบัน (floor+time) กลับไปที่ข้อมูลกลาง',
-          'ถ้าเลือกห้องไว้ จะเขียนชื่อห้อง + baseStatus ข้ามทุกเวลา (คง pending/reserved ไว้)',
+          'อัปเดต base ชนิดช่องทันทีเมื่อกดเครื่องมือ',
+          'ปุ่ม Confirm จะ sync ชื่อห้อง + baseStatus (ทุก slot)',
         ],
       ),
       _RuleItem(

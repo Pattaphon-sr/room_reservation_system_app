@@ -18,6 +18,8 @@ class _MapPreviewState extends State<MapPreview> {
   final String _currentUsername = 'User123';
   final String _selectedSlot = '08:00 - 10:00';
 
+  final cells = buildCellsSlice(floor: 5, slotId: 'S1');
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,7 +29,7 @@ class _MapPreviewState extends State<MapPreview> {
           floor: 5,
           slotId: 'S1',
           role: MapRole.user,
-          cells: kCellsAll,
+          cells: cells,
           onCellTap: (x, y, cell) {
             // debugPrint('tap ($x,$y) ${cell['type']} ${cell['roomNo'] ?? ''}');
             _showBookingPopup(cell);
