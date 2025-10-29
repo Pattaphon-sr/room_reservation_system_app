@@ -153,29 +153,16 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
   /// ---------- Helpers: สำหรับ grouping เดือน ----------
   String _monthYearLabel(DateTime dt) {
     const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
+      'January','February','March','April','May','June',
+      'July','August','September','October','November','December'
     ];
     return '${months[dt.month - 1]} ${dt.year}';
   }
 
-  List<MapEntry<String, List<ActivityItem>>> _groupByMonth(
-    List<ActivityItem> items,
-  ) {
+  List<MapEntry<String, List<ActivityItem>>> _groupByMonth(List<ActivityItem> items) {
     final map = <String, List<ActivityItem>>{};
     for (final e in items) {
-      final key =
-          '${e.dateTime.year}-${e.dateTime.month.toString().padLeft(2, '0')}';
+      final key = '${e.dateTime.year}-${e.dateTime.month.toString().padLeft(2, '0')}';
       map.putIfAbsent(key, () => []).add(e);
     }
     // sort ในกลุ่ม: ใหม่ → เก่า
@@ -183,9 +170,46 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
       list.sort((a, b) => b.dateTime.compareTo(a.dateTime));
     }
     // sort กลุ่ม: ใหม่ → เก่า
-    final entries = map.entries.toList()
-      ..sort((a, b) => b.key.compareTo(a.key));
+    final entries = map.entries.toList()..sort((a, b) => b.key.compareTo(a.key));
     return entries;
+  }
+
+  /// บล็อกรายเดือนแบบเดียวกับฝั่ง User (ใช้ได้ทั้ง Pending/Done)
+  List<Widget> _buildSectionByMonth({
+    required String sectionTitle,
+    required List<ActivityItem> items,
+    Color? titleColor,
+  }) {
+    const monthTopGap = 24.0;
+    const monthBottomGap = 12.0;
+
+    final out = <Widget>[
+      _SectionHeader(title: sectionTitle, color: titleColor),
+      const SizedBox(height: 10),
+    ];
+
+    if (items.isEmpty) {
+      out.add(const _Empty(text: 'No data'));
+      return out;
+    }
+
+    final groups = _groupByMonth(items);
+    for (var gi = 0; gi < groups.length; gi++) {
+      final g = groups[gi];
+
+      if (gi > 0) { // เว้นระยะก่อนเดือนใหม่
+        out.add(const SizedBox(height: monthTopGap));
+        // out.add(const Divider(height: 0, thickness: 0.8, color: Color(0xFFE1E6EB)));
+        out.add(const SizedBox(height: 3));
+      }
+
+      out.add(_MonthLabel(text: _monthYearLabel(g.value.first.dateTime)));
+      out.add(const SizedBox(height: 8));
+      out.addAll(_tilesWithDividers(g.value, isStaff: true));
+      out.add(const SizedBox(height: monthBottomGap));
+    }
+
+    return out;
   }
 
   @override
@@ -195,167 +219,142 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
     // ค้นหาในทุกฟิลด์ที่เกี่ยวข้อง
     final filtered = _items.where((e) {
       if (query.isEmpty) return true;
-      final hay =
-          '${e.floor} ${e.roomCode} ${e.slot} ${e.requestedBy} '
-                  '${e.approvedBy ?? ''} ${e.note ?? ''}'
-              .toLowerCase();
+      final hay = '${e.floor} ${e.roomCode} ${e.slot} ${e.requestedBy} '
+          '${e.approvedBy ?? ''} ${e.note ?? ''}'.toLowerCase();
       return hay.contains(query);
     }).toList();
 
-    final pending =
-        filtered.where((e) => e.status == ApprovalStatus.pending).toList()
-          ..sort(
-            (a, b) => b.dateTime.compareTo(a.dateTime),
-          ); // ให้รายการใหม่อยู่บน
-    final done =
-        filtered.where((e) => e.status != ApprovalStatus.pending).toList()
-          ..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // ใหม่ → เก่า
+    final pending = filtered.where((e) => e.status == ApprovalStatus.pending).toList()
+      ..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // ใหม่ → เก่า
+    final done = filtered.where((e) => e.status != ApprovalStatus.pending).toList()
+      ..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // ใหม่ → เก่า
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: AppColors.primaryGradient5C,
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          stops: AppColorStops.primaryStop5C,
-        ),
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0),
-                child: Text(
-                  'Staff Activity History',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 25,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+    return Scaffold(
+      backgroundColor: const Color(0xFF121212),
+      body: Stack(
+        children: [
+          // พื้นหลัง gradient หลัก (ดึงจาก list ใน theme)
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: AppColors.primaryGradient5C,
               ),
-              const SizedBox(height: 16),
-
-              // Search (แก้วใส + เงาเรืองนิดๆ)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: AppColors.oceanDeep,
-                        blurRadius: 18,
-                        spreadRadius: -2,
-                        offset: Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _search,
-                    onChanged: (_) => setState(() {}),
-                    style: const TextStyle(color: Colors.white),
-                    cursorColor: Colors.white,
-                    decoration: InputDecoration(
-                      hintText: 'Search ...',
-                      hintStyle: const TextStyle(color: Colors.white70),
-                      prefixIcon: const Icon(Icons.search, color: Colors.white),
-                      filled: true,
-                      fillColor: const Color(0x334A74A8), // แก้วใส
-                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(28),
-                        borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.25),
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(28),
-                        borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.25),
-                        ),
-                      ),
-                      focusedBorder: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(28)),
-                        borderSide: BorderSide(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // ตัวการ์ดพื้นหลังอ่อน + เนื้อหา
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(26),
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color.fromARGB(255, 218, 255, 253),
-                        Color(0xFFEFF7FF),
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 24,
-                        spreadRadius: -8,
-                        color: Colors.black26,
-                        offset: Offset(0, -6),
-                      ),
-                    ],
-                  ),
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                    children: [
-                      // ---------- PENDING (บล็อกเดี่ยว) ----------
-                      const _SectionHeader(
-                        title: 'Pending Approval',
-                        color: AppColors.warning,
-                      ),
-                      const SizedBox(height: 10),
-                      if (pending.isEmpty)
-                        const _Empty(text: 'No pending requests')
-                      else ...[
-                        _MonthLabel(
-                          text: _monthYearLabel(pending.first.dateTime),
-                        ),
-                        const SizedBox(height: 8),
-                        ..._tilesWithDividers(pending, isStaff: true),
-                      ],
-
-                      const SizedBox(height: 18),
-
-                      // ---------- DONE (จัดกลุ่มตามเดือนอัตโนมัติ) ----------
-                      const _SectionHeader(title: 'Done'),
-                      const SizedBox(height: 10),
-                      if (done.isEmpty) ...[
-                        const _Empty(text: 'No history yet'),
-                      ] else ...[
-                        for (final entry in _groupByMonth(done)) ...[
-                          _MonthLabel(
-                            text: _monthYearLabel(entry.value.first.dateTime),
-                          ),
-                          const SizedBox(height: 8),
-                          ..._tilesWithDividers(entry.value, isStaff: true),
-                          const SizedBox(height: 12),
-                        ],
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+
+          // เนื้อหา
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 40),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Text(
+                    'History',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 35,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+
+                // Search (แก้วใส + เงาเรืองนิดๆ)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: AppColors.oceanDeep,
+                          blurRadius: 18,
+                          spreadRadius: -2,
+                          offset: Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _search,
+                      onChanged: (_) => setState(() {}),
+                      style: const TextStyle(color: Colors.white),
+                      cursorColor: Colors.white,
+                      decoration: InputDecoration(
+                        hintText: 'Search ...',
+                        hintStyle: const TextStyle(color: Colors.white70),
+                        prefixIcon: const Icon(Icons.search, color: Colors.white),
+                        filled: true,
+                        fillColor: const Color(0x334A74A8),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(28),
+                          borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(28),
+                          borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
+                        ),
+                        focusedBorder: const OutlineInputBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(28)),
+                          borderSide: BorderSide(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 34),
+
+                // ตัวการ์ดพื้นหลังอ่อน + เนื้อหา
+                Expanded(
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color(0xFFFFFFFF),
+                          Color(0xFFFFFFFF),
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          blurRadius: 24,
+                          spreadRadius: -8,
+                          color: Colors.black26,
+                          offset: Offset(0, -6),
+                        ),
+                      ],
+                    ),
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                      children: [
+                        // ---------- PENDING: แสดงเป็นบล็อกรายเดือน ----------
+                        ..._buildSectionByMonth(
+                          sectionTitle: 'Pending Approval',
+                          items: pending,
+                          titleColor: AppColors.warning,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // ---------- DONE: แสดงเป็นบล็อกรายเดือน ----------
+                        ..._buildSectionByMonth(
+                          sectionTitle: 'Done',
+                          items: done,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -369,9 +368,7 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
     for (var i = 0; i < items.length; i++) {
       out.add(_ActivityTileStaff(item: items[i], isStaff: isStaff));
       if (i != items.length - 1) {
-        out.add(
-          const Divider(height: 22, thickness: 0.9, color: Color(0xFFE1E6EB)),
-        );
+        out.add(const Divider(height: 22, thickness: 0.9, color: Color(0xFFE1E6EB)));
       }
     }
     return out;
@@ -390,7 +387,7 @@ class _SectionHeader extends StatelessWidget {
       style: TextStyle(
         color: color ?? Colors.black87,
         fontSize: 20,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
       ),
     );
   }
@@ -404,8 +401,8 @@ class _MonthLabel extends StatelessWidget {
     return Text(
       text,
       style: const TextStyle(
-        color: Color.fromARGB(255, 75, 77, 79),
-        fontSize: 18,
+        color: Colors.black54,
+        fontSize: 19,
         fontWeight: FontWeight.w700,
       ),
     );
@@ -454,9 +451,8 @@ class _ActivityTileStaff extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateStr = _formatDate(item.dateTime);
-    final reviewerLabel = item.status == ApprovalStatus.approved
-        ? 'Approved by'
-        : 'Reviewed by';
+    final reviewerLabel =
+        item.status == ApprovalStatus.approved ? 'Approved by' : 'Reviewed by';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -471,6 +467,7 @@ class _ActivityTileStaff extends StatelessWidget {
                 style: TextStyle(
                   color: _statusColor,
                   fontWeight: FontWeight.w800,
+                  fontSize: 18,
                 ),
               ),
               const SizedBox(width: 6),
@@ -479,6 +476,7 @@ class _ActivityTileStaff extends StatelessWidget {
                 style: const TextStyle(
                   color: Colors.black87,
                   fontWeight: FontWeight.w700,
+                  fontSize: 18,
                 ),
               ),
               const Spacer(),
@@ -489,6 +487,7 @@ class _ActivityTileStaff extends StatelessWidget {
                       ? AppColors.success
                       : Colors.black,
                   fontWeight: FontWeight.w800,
+                  fontSize: 18,
                 ),
               ),
             ],
@@ -504,28 +503,29 @@ class _ActivityTileStaff extends StatelessWidget {
                 style: const TextStyle(
                   color: AppColors.danger,
                   fontWeight: FontWeight.w700,
+                  fontSize: 15,
                 ),
               ),
             ),
 
+          const SizedBox(height: 6),
+
           // แถว: Slot + วันที่เวลา
           Row(
             children: [
-              RichText(
-                text: const TextSpan(
-                  text: 'Slot ',
-                  style: TextStyle(
-                    color: Color(0xFF6A6F77),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                  ),
+              const Text(
+                'Slot: ',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 15,
                 ),
               ),
               Text(
                 item.slot,
                 style: const TextStyle(
                   color: Colors.black87,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w400,
                   fontSize: 15,
                 ),
               ),
@@ -544,25 +544,50 @@ class _ActivityTileStaff extends StatelessWidget {
           const SizedBox(height: 6),
 
           // ผู้ร้องขอ + ผู้อนุมัติ/ผู้ตรวจ
-          Text(
-            'Requested by: ${item.requestedBy}',
-            style: const TextStyle(
-              color: Color(0xFF4A4F57),
-              fontWeight: FontWeight.w600,
-              fontSize: 13,
-            ),
+          Row(
+            children: [
+              const Text(
+                'Requested by: ',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 15,
+                ),
+              ),
+              Text(
+                item.requestedBy,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w400,
+                  fontSize: 15,
+                ),
+              ),
+            ],
           ),
+
           if (item.status != ApprovalStatus.pending &&
               (item.approvedBy ?? '').isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 2.0),
-              child: Text(
-                '$reviewerLabel: ${item.approvedBy!}',
-                style: const TextStyle(
-                  color: Color(0xFF4A4F57),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                ),
+              child: Row(
+                children: [
+                  Text(
+                    '$reviewerLabel: ',
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    ),
+                  ),
+                  Text(
+                    item.approvedBy!,
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w400,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
               ),
             ),
         ],
@@ -571,20 +596,7 @@ class _ActivityTileStaff extends StatelessWidget {
   }
 
   String _formatDate(DateTime dt) {
-    const m = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
+    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
     final ampm = dt.hour >= 12 ? 'PM' : 'AM';
     final mm = dt.minute.toString().padLeft(2, '0');
