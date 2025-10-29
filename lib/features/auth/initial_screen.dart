@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
+import 'package:room_reservation_system_app/features/auth/auth.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 
 class InitialScreen extends StatefulWidget {
@@ -9,16 +10,6 @@ class InitialScreen extends StatefulWidget {
 }
 
 class _InitialScreenState extends State<InitialScreen> {
-  final emailCtrl = TextEditingController();
-  final passCtrl = TextEditingController();
-
-  @override
-  void dispose() {
-    emailCtrl.dispose();
-    passCtrl.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -59,11 +50,26 @@ class _InitialScreenState extends State<InitialScreen> {
                             ),
                           ),
                           Spacer(),
-                          AppButton.outline(label: 'SIGN IN', onPressed: () {}),
+                          AppButton.outline(
+                            label: 'SIGN IN',
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const SignInScreen(),
+                                ),
+                              );
+                            },
+                          ),
                           Spacer(),
                           AppButton.solid(
                             label: 'SIGN UP',
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const SignUpScreen(),
+                                ),
+                              );
+                            },
                             backgroundColor: Color(0xFFEBEBEB),
                             foregroundColor: Colors.black,
                           ),

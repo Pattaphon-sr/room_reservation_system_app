@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
+import 'package:room_reservation_system_app/features/auth/auth.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -162,7 +163,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             ),
                             Spacer(flex: 2),
-                            AppButton.solid(label: 'SIGN UP', onPressed: () {}),
+                            AppButton.solid(
+                              label: 'SIGN UP',
+                              onPressed: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const SignInScreen(),
+                                  ),
+                                );
+                              },
+                            ),
                             Spacer(flex: 3),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -176,7 +187,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                                 SizedBox(width: 12),
                                 GestureDetector(
-                                  onTap: () {},
+                                  onTap: () {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const SignInScreen(),
+                                      ),
+                                    );
+                                  },
                                   child: const Text(
                                     'Sign in',
                                     style: TextStyle(
