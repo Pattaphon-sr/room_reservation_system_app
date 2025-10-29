@@ -14,7 +14,7 @@ class StaffRoot extends StatefulWidget {
 
 class _StaffRootState extends State<StaffRoot> {
   int _index = 0;
-  final _navKeys = List.generate(3, (_) => GlobalKey<NavigatorState>());
+  final _navKeys = List.generate(4, (_) => GlobalKey<NavigatorState>());
 
   Future<bool> _onWillPop() async {
     final nav = _navKeys[_index].currentState!;
@@ -68,8 +68,9 @@ class _StaffRootState extends State<StaffRoot> {
           animationCurve: Curves.easeOutCubic,
           animationDuration: const Duration(milliseconds: 360),
           items: const [
-            Icon(Icons.dashboard_rounded, size: 28, color: Colors.white),
-            Icon(Icons.map_rounded, size: 28, color: Colors.white),
+            Icon(Icons.home_rounded, size: 28, color: Colors.white),
+            Icon(Icons.note_alt_outlined, size: 28, color: Colors.white),
+            Icon(Icons.book, size: 28, color: Colors.white),
             Icon(Icons.person_rounded, size: 28, color: Colors.white),
           ],
           onTap: (i) => setState(() => _index = i),

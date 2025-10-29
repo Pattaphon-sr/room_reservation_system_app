@@ -72,7 +72,7 @@ class _UserRootState extends State<UserRoot> {
           items: const [
             Icon(Icons.home_rounded, size: 28, color: Colors.white),
             Icon(Icons.event_note_rounded, size: 28, color: Colors.white),
-            Icon(Icons.menu_book_rounded, size: 28, color: Colors.white),
+            Icon(Icons.book, size: 28, color: Colors.white),
             Icon(Icons.person_rounded, size: 28, color: Colors.white),
           ],
           onTap: (i) => setState(() => _index = i),

@@ -14,7 +14,7 @@ class ApproverRoot extends StatefulWidget {
 
 class _ApproverRootState extends State<ApproverRoot> {
   int _index = 0;
-  final _navKeys = List.generate(2, (_) => GlobalKey<NavigatorState>());
+  final _navKeys = List.generate(5, (_) => GlobalKey<NavigatorState>());
 
   Future<bool> _onWillPop() async {
     final nav = _navKeys[_index].currentState!;
@@ -57,6 +57,11 @@ class _ApproverRootState extends State<ApproverRoot> {
               initialPageBuilder: (_) => const ApproverAccountScreen(),
               routes: {'/': (_) => const ApproverAccountScreen()},
             ),
+            NestedTabNavigator(
+              navKey: _navKeys[4],
+              initialPageBuilder: (_) => const ApproverAccountScreen(),
+              routes: {'/': (_) => const ApproverAccountScreen()},
+            ),
           ],
         ),
         bottomNavigationBar: CurvedNavigationBar(
@@ -68,7 +73,10 @@ class _ApproverRootState extends State<ApproverRoot> {
           animationCurve: Curves.easeOutCubic,
           animationDuration: const Duration(milliseconds: 360),
           items: const [
-            Icon(Icons.inbox_rounded, size: 28, color: Colors.white),
+            Icon(Icons.home_rounded, size: 28, color: Colors.white),
+            Icon(Icons.map_rounded, size: 28, color: Colors.white),
+            Icon(Icons.event_note_rounded, size: 28, color: Colors.white),
+            Icon(Icons.book, size: 28, color: Colors.white),
             Icon(Icons.person_rounded, size: 28, color: Colors.white),
           ],
           onTap: (i) => setState(() => _index = i),

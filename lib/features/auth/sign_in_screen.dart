@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:room_reservation_system_app/core/routes/roles.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
+import 'package:room_reservation_system_app/features/approver/root.dart';
+import 'package:room_reservation_system_app/features/staff/root.dart';
+import 'package:room_reservation_system_app/features/user/root.dart';
+import 'package:room_reservation_system_app/services/auth_service.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
+import 'package:room_reservation_system_app/features/auth/auth.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -11,11 +17,46 @@ class SignInScreen extends StatefulWidget {
 class _SignInScreenState extends State<SignInScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
+  bool loading = false;
+
   @override
   void dispose() {
     emailCtrl.dispose();
     passCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _doLogin() async {
+    setState(() {
+      loading = true;
+    });
+    final role = await AuthService.instance.login(
+      email: emailCtrl.text.trim(),
+      password: passCtrl.text,
+    );
+    setState(() => loading = false);
+
+    if (role == null) {
+      return;
+    }
+
+    Widget dest;
+    switch (role) {
+      case Role.user:
+        dest = const UserRoot();
+        break;
+      case Role.staff:
+        dest = const StaffRoot();
+        break;
+      case Role.approver:
+        dest = const ApproverRoot();
+        break;
+    }
+
+    if (!mounted) return;
+    Navigator.of(
+      context,
+    ).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => dest), (_) => false);
   }
 
   @override
@@ -80,13 +121,14 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                       ),
                       child: Padding(
-                        padding: EdgeInsetsGeometry.symmetric(horizontal: 42),
+                        padding: EdgeInsets.symmetric(horizontal: 42),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             SizedBox(height: 40),
                             // Spacer(),
                             TextField(
+                              controller: emailCtrl,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
@@ -106,6 +148,7 @@ class _SignInScreenState extends State<SignInScreen> {
                             ),
                             SizedBox(height: 14),
                             TextField(
+                              controller: passCtrl,
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
                                 labelStyle: TextStyle(
@@ -123,7 +166,10 @@ class _SignInScreenState extends State<SignInScreen> {
                               ),
                             ),
                             Spacer(flex: 2),
-                            AppButton.solid(label: 'SIGN UP', onPressed: () {}),
+                            AppButton.solid(
+                              label: loading ? 'SIGNING IN...' : 'SIGN IN',
+                              onPressed: loading ? null : _doLogin,
+                            ),
                             Spacer(flex: 3),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -137,7 +183,14 @@ class _SignInScreenState extends State<SignInScreen> {
                                 ),
                                 SizedBox(width: 12),
                                 GestureDetector(
-                                  onTap: () {},
+                                  onTap: () {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const SignUpScreen(),
+                                      ),
+                                    );
+                                  },
                                   child: const Text(
                                     'Sign up',
                                     style: TextStyle(
