@@ -153,16 +153,29 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
   /// ---------- Helpers: สำหรับ grouping เดือน ----------
   String _monthYearLabel(DateTime dt) {
     const months = [
-      'January','February','March','April','May','June',
-      'July','August','September','October','November','December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${months[dt.month - 1]} ${dt.year}';
   }
 
-  List<MapEntry<String, List<ActivityItem>>> _groupByMonth(List<ActivityItem> items) {
+  List<MapEntry<String, List<ActivityItem>>> _groupByMonth(
+    List<ActivityItem> items,
+  ) {
     final map = <String, List<ActivityItem>>{};
     for (final e in items) {
-      final key = '${e.dateTime.year}-${e.dateTime.month.toString().padLeft(2, '0')}';
+      final key =
+          '${e.dateTime.year}-${e.dateTime.month.toString().padLeft(2, '0')}';
       map.putIfAbsent(key, () => []).add(e);
     }
     // sort ในกลุ่ม: ใหม่ → เก่า
@@ -170,7 +183,8 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
       list.sort((a, b) => b.dateTime.compareTo(a.dateTime));
     }
     // sort กลุ่ม: ใหม่ → เก่า
-    final entries = map.entries.toList()..sort((a, b) => b.key.compareTo(a.key));
+    final entries = map.entries.toList()
+      ..sort((a, b) => b.key.compareTo(a.key));
     return entries;
   }
 
@@ -197,7 +211,8 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
     for (var gi = 0; gi < groups.length; gi++) {
       final g = groups[gi];
 
-      if (gi > 0) { // เว้นระยะก่อนเดือนใหม่
+      if (gi > 0) {
+        // เว้นระยะก่อนเดือนใหม่
         out.add(const SizedBox(height: monthTopGap));
         // out.add(const Divider(height: 0, thickness: 0.8, color: Color(0xFFE1E6EB)));
         out.add(const SizedBox(height: 3));
@@ -219,142 +234,143 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
     // ค้นหาในทุกฟิลด์ที่เกี่ยวข้อง
     final filtered = _items.where((e) {
       if (query.isEmpty) return true;
-      final hay = '${e.floor} ${e.roomCode} ${e.slot} ${e.requestedBy} '
-          '${e.approvedBy ?? ''} ${e.note ?? ''}'.toLowerCase();
+      final hay =
+          '${e.floor} ${e.roomCode} ${e.slot} ${e.requestedBy} '
+                  '${e.approvedBy ?? ''} ${e.note ?? ''}'
+              .toLowerCase();
       return hay.contains(query);
     }).toList();
 
-    final pending = filtered.where((e) => e.status == ApprovalStatus.pending).toList()
-      ..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // ใหม่ → เก่า
-    final done = filtered.where((e) => e.status != ApprovalStatus.pending).toList()
-      ..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // ใหม่ → เก่า
+    final pending =
+        filtered.where((e) => e.status == ApprovalStatus.pending).toList()
+          ..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // ใหม่ → เก่า
+    final done =
+        filtered.where((e) => e.status != ApprovalStatus.pending).toList()
+          ..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // ใหม่ → เก่า
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF121212),
-      body: Stack(
-        children: [
-          // พื้นหลัง gradient หลัก (ดึงจาก list ใน theme)
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: AppColors.primaryGradient5C,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: AppColors.primaryGradient5C,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: AppColorStops.primaryStop5C,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 40),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  'History',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 35,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
-            ),
-          ),
+              const SizedBox(height: 30),
 
-          // เนื้อหา
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 40),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Text(
-                    'History',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 35,
-                      fontWeight: FontWeight.w800,
-                    ),
+              // Search (แก้วใส + เงาเรืองนิดๆ)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: AppColors.oceanDeep,
+                        blurRadius: 18,
+                        spreadRadius: -2,
+                        offset: Offset(0, 6),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 30),
-
-                // Search (แก้วใส + เงาเรืองนิดๆ)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: AppColors.oceanDeep,
-                          blurRadius: 18,
-                          spreadRadius: -2,
-                          offset: Offset(0, 6),
+                  child: TextField(
+                    controller: _search,
+                    onChanged: (_) => setState(() {}),
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      hintText: 'Search ...',
+                      hintStyle: const TextStyle(color: Colors.white70),
+                      prefixIcon: const Icon(Icons.search, color: Colors.white),
+                      filled: true,
+                      fillColor: const Color(0x334A74A8),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(28),
+                        borderSide: BorderSide(
+                          color: Colors.white.withOpacity(0.25),
                         ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _search,
-                      onChanged: (_) => setState(() {}),
-                      style: const TextStyle(color: Colors.white),
-                      cursorColor: Colors.white,
-                      decoration: InputDecoration(
-                        hintText: 'Search ...',
-                        hintStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon: const Icon(Icons.search, color: Colors.white),
-                        filled: true,
-                        fillColor: const Color(0x334A74A8),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(28),
-                          borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(28),
+                        borderSide: BorderSide(
+                          color: Colors.white.withOpacity(0.25),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(28),
-                          borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
-                        ),
-                        focusedBorder: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(28)),
-                          borderSide: BorderSide(color: Colors.white),
-                        ),
+                      ),
+                      focusedBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(28)),
+                        borderSide: BorderSide(color: Colors.white),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 34),
+              ),
+              const SizedBox(height: 34),
 
-                // ตัวการ์ดพื้นหลังอ่อน + เนื้อหา
-                Expanded(
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0xFFFFFFFF),
-                          Color(0xFFFFFFFF),
-                        ],
+              // ตัวการ์ดพื้นหลังอ่อน + เนื้อหา
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(26),
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 24,
+                        spreadRadius: -8,
+                        color: Colors.black26,
+                        offset: Offset(0, -6),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          blurRadius: 24,
-                          spreadRadius: -8,
-                          color: Colors.black26,
-                          offset: Offset(0, -6),
-                        ),
-                      ],
-                    ),
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                      children: [
-                        // ---------- PENDING: แสดงเป็นบล็อกรายเดือน ----------
-                        ..._buildSectionByMonth(
-                          sectionTitle: 'Pending Approval',
-                          items: pending,
-                          titleColor: AppColors.warning,
-                        ),
+                    ],
+                  ),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                    children: [
+                      // ---------- PENDING: แสดงเป็นบล็อกรายเดือน ----------
+                      ..._buildSectionByMonth(
+                        sectionTitle: 'Pending Approval',
+                        items: pending,
+                        titleColor: AppColors.warning,
+                      ),
 
-                        const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                        // ---------- DONE: แสดงเป็นบล็อกรายเดือน ----------
-                        ..._buildSectionByMonth(
-                          sectionTitle: 'Done',
-                          items: done,
-                        ),
-                      ],
-                    ),
+                      // ---------- DONE: แสดงเป็นบล็อกรายเดือน ----------
+                      ..._buildSectionByMonth(
+                        sectionTitle: 'Done',
+                        items: done,
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -368,7 +384,9 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
     for (var i = 0; i < items.length; i++) {
       out.add(_ActivityTileStaff(item: items[i], isStaff: isStaff));
       if (i != items.length - 1) {
-        out.add(const Divider(height: 22, thickness: 0.9, color: Color(0xFFE1E6EB)));
+        out.add(
+          const Divider(height: 22, thickness: 0.9, color: Color(0xFFE1E6EB)),
+        );
       }
     }
     return out;
@@ -451,8 +469,9 @@ class _ActivityTileStaff extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateStr = _formatDate(item.dateTime);
-    final reviewerLabel =
-        item.status == ApprovalStatus.approved ? 'Approved by' : 'Reviewed by';
+    final reviewerLabel = item.status == ApprovalStatus.approved
+        ? 'Approved by'
+        : 'Reviewed by';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
@@ -596,7 +615,20 @@ class _ActivityTileStaff extends StatelessWidget {
   }
 
   String _formatDate(DateTime dt) {
-    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const m = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
     final ampm = dt.hour >= 12 ? 'PM' : 'AM';
     final mm = dt.minute.toString().padLeft(2, '0');

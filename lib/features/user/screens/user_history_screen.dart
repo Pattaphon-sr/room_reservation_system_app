@@ -135,7 +135,8 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
 
   /// ============ Group by Month-Year (ใหม่ → เก่า) ============
   List<MapEntry<String, List<ActivityItem>>> _groupByMonth(
-      List<ActivityItem> items) {
+    List<ActivityItem> items,
+  ) {
     final map = <String, List<ActivityItem>>{};
     for (final it in items) {
       final key =
@@ -166,7 +167,7 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
       'September',
       'October',
       'November',
-      'December'
+      'December',
     ];
     return '${months[dt.month - 1]} ${dt.year}';
   }
@@ -222,154 +223,144 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
     // Filter (ค้นหา floor/room/slot/note)
     final filtered = _items.where((e) {
       if (q.isEmpty) return true;
-      final hay =
-          '${e.floor} ${e.roomCode} ${e.slot} ${(e.note ?? '')}'.toLowerCase();
+      final hay = '${e.floor} ${e.roomCode} ${e.slot} ${(e.note ?? '')}'
+          .toLowerCase();
       return hay.contains(q);
     }).toList();
 
     // แยก Pending / Done
-    final pending =
-        filtered.where((e) => e.status == ApprovalStatus.pending).toList();
-    final done = filtered
-        .where((e) => e.status != ApprovalStatus.pending)
-        .toList()
-      ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    final pending = filtered
+        .where((e) => e.status == ApprovalStatus.pending)
+        .toList();
+    final done =
+        filtered.where((e) => e.status != ApprovalStatus.pending).toList()
+          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF121212),
-      body: Stack(
-        children: [
-          // พื้นหลัง gradient (ใช้ list จาก AppColors ถ้ามี)
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                // ถ้าโปรเจ็กต์คุณมี AppColors.primaryGradient5C ให้ใช้ได้เลย
-                // ไม่ต้องใส่ stops ถ้าไม่มี AppColorStops
-                colors: AppColors.primaryGradient5C,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: AppColors.primaryGradient5C,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: AppColorStops.primaryStop5C,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 40),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  'History',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 35,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
+                ),
               ),
-            ),
-          ),
+              const SizedBox(height: 14),
 
-          // ---------- CONTENT ----------
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 40),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Text(
-                    'History',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 35,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
-                    ),
+              // Search
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x802B9CFF),
+                        blurRadius: 18,
+                        spreadRadius: -2,
+                        offset: Offset(0, 6),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 14),
-
-                // Search
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x802B9CFF),
-                          blurRadius: 18,
-                          spreadRadius: -2,
-                          offset: Offset(0, 6),
+                  child: TextField(
+                    controller: _search,
+                    onChanged: (_) => setState(() {}),
+                    style: const TextStyle(color: Colors.white),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      hintText: 'Search ...',
+                      hintStyle: const TextStyle(color: Colors.white70),
+                      prefixIcon: const Icon(Icons.search, color: Colors.white),
+                      filled: true,
+                      fillColor: const Color(0x334A74A8),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(28),
+                        borderSide: BorderSide(
+                          color: Colors.white.withOpacity(0.25),
                         ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: _search,
-                      onChanged: (_) => setState(() {}),
-                      style: const TextStyle(color: Colors.white),
-                      cursorColor: Colors.white,
-                      decoration: InputDecoration(
-                        hintText: 'Search ...',
-                        hintStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon:
-                            const Icon(Icons.search, color: Colors.white),
-                        filled: true,
-                        fillColor: const Color(0x334A74A8),
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 16),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(28),
-                          borderSide: BorderSide(
-                              color: Colors.white.withOpacity(0.25)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(28),
+                        borderSide: BorderSide(
+                          color: Colors.white.withOpacity(0.25),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(28),
-                          borderSide: BorderSide(
-                              color: Colors.white.withOpacity(0.25)),
-                        ),
-                        focusedBorder: const OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(28)),
-                          borderSide: BorderSide(color: Colors.white),
-                        ),
+                      ),
+                      focusedBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(28)),
+                        borderSide: BorderSide(color: Colors.white),
                       ),
                     ),
                   ),
                 ),
+              ),
 
-                const SizedBox(height: 25),
+              const SizedBox(height: 25),
 
-                // การ์ดเนื้อหา
-                Expanded(
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(26)),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0xFFFFFFFF),
-                          Color(0xFFFFFFFF),
-                        ],
+              // การ์ดเนื้อหา
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(26),
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 24,
+                        spreadRadius: -8,
+                        color: Colors.black26,
+                        offset: Offset(0, -6),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          blurRadius: 24,
-                          spreadRadius: -8,
-                          color: Colors.black26,
-                          offset: Offset(0, -6),
-                        ),
-                      ],
-                    ),
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                      children: [
-                        // Pending by month
-                        ..._buildSectionByMonth(
-                          sectionTitle: 'Pending Approval',
-                          items: pending,
-                          titleColor: const Color(0xFFF5A623),
-                        ),
+                    ],
+                  ),
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                    children: [
+                      // Pending by month
+                      ..._buildSectionByMonth(
+                        sectionTitle: 'Pending Approval',
+                        items: pending,
+                        titleColor: const Color(0xFFF5A623),
+                      ),
 
-                        const SizedBox(height: 18),
+                      const SizedBox(height: 18),
 
-                        // Done by month
-                        ..._buildSectionByMonth(
-                          sectionTitle: 'Done',
-                          items: done,
-                        ),
-                      ],
-                    ),
+                      // Done by month
+                      ..._buildSectionByMonth(
+                        sectionTitle: 'Done',
+                        items: done,
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -380,8 +371,9 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
     for (var i = 0; i < items.length; i++) {
       out.add(_ActivityTile(item: items[i]));
       if (i != items.length - 1) {
-        out.add(const Divider(
-            height: 22, thickness: 0.9, color: Color(0xFFE1E6EB)));
+        out.add(
+          const Divider(height: 22, thickness: 0.9, color: Color(0xFFE1E6EB)),
+        );
       }
     }
     return out;
@@ -429,10 +421,7 @@ class _Empty extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 14.0),
-      child: Text(
-        text,
-        style: const TextStyle(color: Color(0xFF9AA1A9)),
-      ),
+      child: Text(text, style: const TextStyle(color: Color(0xFF9AA1A9))),
     );
   }
 }
@@ -550,9 +539,10 @@ class _ActivityTile extends StatelessWidget {
               Text(
                 dateStr,
                 style: const TextStyle(
-                    color: Color(0xFF6A6F77),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15),
+                  color: Color(0xFF6A6F77),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
               ),
             ],
           ),
@@ -574,7 +564,7 @@ class _ActivityTile extends StatelessWidget {
       'Sep',
       'Oct',
       'Nov',
-      'Dec'
+      'Dec',
     ];
     final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
     final ampm = dt.hour >= 12 ? 'PM' : 'AM';
