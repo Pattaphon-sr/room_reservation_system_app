@@ -13,6 +13,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   final nameCtrl = TextEditingController();
+  bool _obscure = true;
+  bool _obscure2 = true;
 
   @override
   void dispose() {
@@ -129,6 +131,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             SizedBox(height: 14),
                             TextField(
                               textInputAction: TextInputAction.next,
+                              keyboardType: TextInputType.visiblePassword,
+                              obscureText: _obscure,
                               decoration: InputDecoration(
                                 labelStyle: TextStyle(
                                   fontWeight: FontWeight.w500,
@@ -142,11 +146,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 hintStyle: TextStyle(color: Colors.grey[500]),
                                 labelText: 'Password',
                                 hintText: 'your password',
+                                suffixIcon: IconButton(
+                                  // <- ปุ่มสลับโชว์/ซ่อน
+                                  onPressed: () =>
+                                      setState(() => _obscure = !_obscure),
+                                  icon: Icon(
+                                    _obscure
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    color: const Color(0xFF0F828C),
+                                    size: 22,
+                                  ),
+                                ),
                               ),
                             ),
                             SizedBox(height: 14),
                             TextField(
                               textInputAction: TextInputAction.done,
+                              keyboardType: TextInputType.visiblePassword,
+                              obscureText: _obscure2,
                               decoration: InputDecoration(
                                 labelStyle: TextStyle(
                                   fontWeight: FontWeight.w500,
@@ -160,6 +178,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 hintStyle: TextStyle(color: Colors.grey[500]),
                                 labelText: 'Confirm Password',
                                 hintText: 'your password',
+                                suffixIcon: IconButton(
+                                  // <- ปุ่มสลับโชว์/ซ่อน
+                                  onPressed: () =>
+                                      setState(() => _obscure2 = !_obscure2),
+                                  icon: Icon(
+                                    _obscure2
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    color: const Color(0xFF0F828C),
+                                    size: 22,
+                                  ),
+                                ),
                               ),
                             ),
                             Spacer(flex: 2),

@@ -18,6 +18,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   bool loading = false;
+  bool _obscure = true;
 
   @override
   void dispose() {
@@ -149,6 +150,8 @@ class _SignInScreenState extends State<SignInScreen> {
                             SizedBox(height: 14),
                             TextField(
                               controller: passCtrl,
+                              keyboardType: TextInputType.visiblePassword,
+                              obscureText: _obscure,
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
                                 labelStyle: TextStyle(
@@ -163,6 +166,18 @@ class _SignInScreenState extends State<SignInScreen> {
                                 hintStyle: TextStyle(color: Colors.grey[500]),
                                 labelText: 'Password',
                                 hintText: 'your password',
+                                suffixIcon: IconButton(
+                                  // <- ปุ่มสลับโชว์/ซ่อน
+                                  onPressed: () =>
+                                      setState(() => _obscure = !_obscure),
+                                  icon: Icon(
+                                    _obscure
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    color: const Color(0xFF0F828C),
+                                    size: 22,
+                                  ),
+                                ),
                               ),
                             ),
                             Spacer(flex: 2),

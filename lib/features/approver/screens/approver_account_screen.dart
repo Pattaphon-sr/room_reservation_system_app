@@ -43,7 +43,7 @@ class _ApproverAccountScreenState extends State<ApproverAccountScreen> {
               ),
               const SizedBox(height: 15),
               const Text(
-                "Hi, User123!",
+                "Hi, Approver123!",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -52,7 +52,7 @@ class _ApproverAccountScreenState extends State<ApproverAccountScreen> {
               ),
               const SizedBox(height: 4),
               const Text(
-                "user123@gmail.com",
+                "approver123@gmail.com",
                 style: TextStyle(fontSize: 14, color: Colors.white70),
               ),
               const SizedBox(height: 30),
