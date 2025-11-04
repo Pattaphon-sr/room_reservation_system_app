@@ -6,7 +6,6 @@ import 'package:room_reservation_system_app/core/theme/app_colors.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/features/approver/root.dart';
 
-
 class ApproverHomeScreen extends StatefulWidget {
   const ApproverHomeScreen({super.key});
 
@@ -17,6 +16,7 @@ class ApproverHomeScreen extends StatefulWidget {
 class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
   Map<String, dynamic>? overallSummary;
   List<Map<String, dynamic>> floorSummary = [];
+  List<Map<String, dynamic>> dailyRequests = [];
 
   final List<Map<String, dynamic>> floorData = const [
     {
@@ -40,13 +40,14 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
   void initState() {
     super.initState();
     fetchDashboard();
+    fetchDailyRequests();
   }
+
+  final apiBaseUrl = 'http://192.168.3.100:3000';
 
   Future<void> fetchDashboard() async {
     try {
-      const apiBaseUrl = 'http://192.168.3.100:3000';
       final response = await http.get(Uri.parse('$apiBaseUrl/api/dashboard'));
-
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
         setState(() {
@@ -104,6 +105,28 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> fetchDailyRequests() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$apiBaseUrl/api/reservations/daily'),
+      );
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        setState(() {
+          dailyRequests = List<Map<String, dynamic>>.from(
+            jsonData['data'] ?? [],
+          );
+        });
+      } else {
+        debugPrint(
+          'Failed to load daily requests: ${response.statusCode} ${response.body}',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error fetching daily requests: $e');
+    }
   }
 
   Widget _buildFloorCard(
@@ -245,6 +268,89 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
     );
   }
 
+  Widget _buildRequestItem(Map<String, dynamic> request) {
+    final fullDateTime = request['full_datetime'] ?? '';
+    final parts = fullDateTime.split(' ');
+    String datePart = '';
+    String timePart = '';
+
+    if (parts.length >= 4) {
+      datePart = '${parts[0]} ${parts[1]} ${parts[2]}';
+      timePart = parts[3];
+    }
+
+    return Container(
+      
+      padding: const EdgeInsets.all(5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+
+                children: [
+                  Text(
+                    datePart,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  Text(
+                    timePart,
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'By: ${request['requested_by_name'] ?? '-'}',
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                ],
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Room: ${request['room_name'] ?? '-'}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      request['slot_label'] ?? '',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                (request['status'] ?? '').toString().toUpperCase(),
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(height: 1, color: Colors.white30),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -303,7 +409,7 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "ROOM REQUEST",
+                    "DAILY ROOM REQUEST",
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
@@ -329,57 +435,22 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
                 height: 210,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // เวลา
-                          Text(
-                            '07:00',
+                  child: dailyRequests.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No pending requests today.',
                             style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                          ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  'Room: 501',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                Text(
-                                  '08:00 - 10:00',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            'pending',
-                            style: TextStyle(
-                              color: Colors.amber,
-                              fontWeight: FontWeight.bold,
+                              color: Colors.white70,
                               fontSize: 14,
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Container(height: 1, color: Colors.white30),
-                    ],
-                  ),
+                        )
+                      : ListView.builder(
+                          itemCount: dailyRequests.length,
+                          itemBuilder: (context, index) {
+                            return _buildRequestItem(dailyRequests[index]);
+                          },
+                        ),
                 ),
               ),
               const SizedBox(height: 15),
@@ -438,4 +509,3 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
     );
   }
 }
-
