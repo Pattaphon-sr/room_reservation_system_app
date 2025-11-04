@@ -1,13 +1,16 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
-import 'package:room_reservation_system_app/data/cells_seed.dart';
+// import 'package:room_reservation_system_app/data/cells_seed.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/shared/widgets/maps/map_types.dart';
+
+import 'package:room_reservation_system_app/features/cells/data/cells_api.dart';
 
 class FloorEditorScreen extends StatefulWidget {
   const FloorEditorScreen({
     super.key,
-    this.initialFloor = 5,
+    this.initialFloor = 3,
     this.initialSlotId = 'S1',
   });
 
@@ -19,12 +22,21 @@ class FloorEditorScreen extends StatefulWidget {
 }
 
 class _FloorEditorScreenState extends State<FloorEditorScreen> {
+  final _api = CellsApi();
+
+  bool _loading = true; // เพิ่ม field
+
   // ========= selections (Floor / Time) =========
   late int floor;
   late String slotId;
 
+  // ===== keep original values for change detection =====
+  String? _initialRoomNo;
+  RoomStatus? _initialBaseStatus;
+
   // ========= working data of current (floor, slot) =========
-  late List<Map<String, dynamic>> working;
+  List<Map<String, dynamic>> working = [];
+  String? _slotLabel; // ใช้โชว์ใน dialog
 
   // ========= current selection & form =========
   Map<String, dynamic>? _selected; // cell object from "working"
@@ -51,26 +63,40 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
   }
 
   // โหลด snapshot ของ floor/slot ปัจจุบันมาแก้
-  void _loadWorking() {
-    working = buildCellsSlice(floor: floor, slotId: slotId)
-        .map(
-          (c) => {
-            'floor': c['floor'],
-            'slotId': c['slotId'],
-            'slotLabel': c['slotLabel'],
-            'x': c['x'],
-            'y': c['y'],
-            'type': c['type'],
-            if (c.containsKey('roomNo')) 'roomNo': c['roomNo'],
-            if (c.containsKey('baseStatus')) 'baseStatus': c['baseStatus'],
-            if (c.containsKey('bookingStatus'))
-              'bookingStatus': c['bookingStatus'],
-            if (c.containsKey('status')) 'status': c['status'], // display
-          },
-        )
-        .toList();
+  Future<void> _loadWorking() async {
+    // ใช้วันนี้เป็น default date (ตาม API ปัจจุบัน filter ด้วย created_at)
+    final today = DateTime.now();
+    final dateStr =
+        "${today.year.toString().padLeft(4, '0')}-"
+        "${today.month.toString().padLeft(2, '0')}-"
+        "${today.day.toString().padLeft(2, '0')}";
+
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    try {
+      final cells = await _api.getMap(
+        floor: floor,
+        slotId: slotId,
+        date: dateStr,
+      );
+      working = cells;
+      _slotLabel = cells.isNotEmpty
+          ? (cells.first['slotLabel'] ?? slotId)
+          : slotId;
+    } catch (e) {
+      working = [];
+      if (mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Load map failed')));
+      });
+    }
+
     _clearSelection();
-    setState(() {});
+    if (mounted) setState(() => _loading = false);
   }
 
   void _clearSelection() {
@@ -78,10 +104,18 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
     _lastToolPressed = null;
     _roomCtrl.text = '';
     _status = RoomStatus.disabled;
+
+    // reset initial snapshot
+    _initialRoomNo = null;
+    _initialBaseStatus = null;
   }
 
-  Map<String, dynamic> _cellAt(int x, int y) =>
-      working.firstWhere((e) => e['x'] == x && e['y'] == y);
+  Map<String, dynamic> _cellAt(int x, int y) {
+    return working.firstWhere(
+      (e) => e['x'] == x && e['y'] == y,
+      orElse: () => {'x': x, 'y': y, 'type': CellType.empty},
+    );
+  }
 
   // ============ Selection & Form sync ============
   void _selectCell(Map<String, dynamic> cell) {
@@ -93,32 +127,24 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
 
     if (cell['type'] == CellType.room) {
       final base = (cell['baseStatus'] as RoomStatus?) ?? RoomStatus.disabled;
+      final roomNo = (cell['roomNo'] ?? '').toString();
+
+      // fill form
       _status = base;
-      _roomCtrl.text = (cell['roomNo'] ?? '—').toString();
+      _roomCtrl.text = roomNo;
+
+      // snapshot for change detection
+      _initialRoomNo = roomNo;
+      _initialBaseStatus = base;
     } else {
       _status = RoomStatus.disabled;
       _roomCtrl.text = '';
+
+      _initialRoomNo = null;
+      _initialBaseStatus = null;
     }
     _selected = cell;
     setState(() {});
-  }
-
-  // ============ Room auto number ============
-  String _autoRoomNo(Map<String, dynamic> cell) {
-    final current = (cell['roomNo'] ?? '').toString().trim();
-    if (current.isNotEmpty && current != '—') return current;
-
-    final prefix = '$floor';
-    final used = working
-        .where((c) => c['type'] == CellType.room && c['roomNo'] != null)
-        .map((c) => c['roomNo'].toString())
-        .toSet();
-
-    for (int n = 1; n <= 999; n++) {
-      final candidate = '$prefix${n.toString().padLeft(2, '0')}';
-      if (!used.contains(candidate)) return candidate;
-    }
-    return '—';
   }
 
   // ============ Confirm popups ============
@@ -140,7 +166,7 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
                   SizedBox(height: 30),
                   Center(
                     child: Text(
-                      'Remove room?',
+                      'Set to Empty?',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w600,
@@ -151,7 +177,7 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
                   SizedBox(height: 32),
                   Center(
                     child: Text(
-                      'This room will be removed and to accommodate the gap. (Empty)',
+                      'This room will be hidden and an empty cell will take its place.',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
@@ -166,7 +192,7 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 AppButton.solid(
-                  label: 'Remove',
+                  label: 'Confirm',
                   backgroundColor: AppColors.danger,
                   onPressed: () => Navigator.pop(context, true),
                 ),
@@ -187,125 +213,154 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
 
   // ================= Silent save helpers =================
   Future<void> _saveSliceSilently() async {
-    // ตอนนี้อัปเดตลง Base ทันทีผ่านฟังก์ชันใน data layer แล้ว
-    _loadWorking(); // reload slice
+    await _loadWorking(); // reload slice + clear selection
   }
 
   Future<void> _closeSelectionAndSave() async {
     await _saveSliceSilently();
-    _clearSelection();
     setState(() {});
   }
-  // ======================================================
 
   // ============ TOOL FLOW (กดแล้ว “ทำทันที”) ============
   Future<void> _onToolPress(CellType tool) async {
     if (_selected == null) return;
-
     final cell = _selected!;
-    final type = cell['type'] as CellType;
+    final currentType = cell['type'] as CellType;
+    final int? id = cell['id'] as int?;
+    final int cx = cell['x'] as int;
+    final int cy = cell['y'] as int;
 
     setState(() => _lastToolPressed = tool);
 
-    Future<void> _persistType(CellType newType, {String? roomNo}) async {
-      await updateBaseCellTypeAt(
-        floor: floor,
-        x: cell['x'] as int,
-        y: cell['y'] as int,
-        type: newType,
-        roomNo: roomNo,
-      );
-      await _closeSelectionAndSave();
+    Future<void> reload() async {
+      await _closeSelectionAndSave(); // เรียกโหลดใหม่ + ล้าง selection
     }
 
-    // 1) select = empty
-    if (type == CellType.empty) {
-      if (tool == CellType.corridor ||
-          tool == CellType.stair ||
-          tool == CellType.decoration) {
-        await _persistType(tool);
+    try {
+      // 1) จาก empty -> corridor/stair/decoration/room
+      if (currentType == CellType.empty) {
+        if (tool == CellType.room) {
+          await _api.provisionRoom(floor: floor, x: cx, y: cy);
+          await reload();
+          return;
+        }
+        if (tool == CellType.corridor ||
+            tool == CellType.stair ||
+            tool == CellType.decoration) {
+          if (id == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Cannot update: cell id not found')),
+            );
+            return;
+          }
+          await _api.updateType(id: id, type: tool);
+          await reload();
+          return;
+        }
         return;
       }
-      if (tool == CellType.room) {
-        final rn = _autoRoomNo(cell);
-        await _persistType(CellType.room, roomNo: rn);
-        return;
-      }
-      return;
-    }
 
-    // 2) select = corridor / stair / decoration
-    if (type == CellType.corridor ||
-        type == CellType.stair ||
-        type == CellType.decoration) {
-      if (tool == CellType.empty) {
-        final ok = await _confirmRemoveRoom();
-        if (!ok) return;
-        await _persistType(CellType.empty);
+      // 2) จาก corridor/stair/decoration
+      if (currentType == CellType.corridor ||
+          currentType == CellType.stair ||
+          currentType == CellType.decoration) {
+        if (tool == CellType.empty) {
+          if (id == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Cannot update: cell id not found')),
+            );
+            return;
+          }
+          await _api.updateType(id: id, type: CellType.empty);
+          await reload();
+          return;
+        }
+        if (tool == CellType.room) {
+          await _api.provisionRoom(floor: floor, x: cx, y: cy);
+          await reload();
+          return;
+        }
+        // เปลี่ยนเป็นประเภททางเดิน/บันได/ตกแต่งอื่น ๆ
+        if (tool == CellType.corridor ||
+            tool == CellType.stair ||
+            tool == CellType.decoration) {
+          if (id == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Cannot update: cell id not found')),
+            );
+            return;
+          }
+          await _api.updateType(id: id, type: tool);
+          await reload();
+          return;
+        }
         return;
       }
-      if (tool == CellType.room) {
-        final rn = _autoRoomNo(cell);
-        await _persistType(CellType.room, roomNo: rn);
-        return;
-      }
-      if (tool == CellType.corridor ||
-          tool == CellType.stair ||
-          tool == CellType.decoration) {
-        await _persistType(tool);
-        return;
-      }
-      return;
-    }
 
-    // 3) select = room
-    if (type == CellType.room) {
-      if (tool == CellType.empty) {
-        final ok = await _confirmRemoveRoom();
-        if (!ok) return;
-        await _persistType(CellType.empty);
+      // 3) จาก room
+      if (currentType == CellType.room) {
+        if (tool == CellType.empty) {
+          final ok = await _confirmRemoveRoom();
+          if (!ok) return;
+          // ใช้ soft-remove ให้ถูกกติกา: ซ่อนห้อง + เติม empty (detach=true)
+          if (id == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Cannot update: cell id not found')),
+            );
+            return;
+          }
+          await _api.setHidden(id: id, hidden: true, detach: true);
+          await reload();
+          return;
+        }
+        if (tool == CellType.room) {
+          // เข้าโหมดแก้ฟอร์ม (ชื่อ/สถานะ) เฉย ๆ
+          _selectCell(cell);
+          return;
+        }
         return;
       }
-      if (tool == CellType.room) {
-        // คง selection → แก้ฟอร์ม (ชื่อ/Enable-Disable)
-        _selectCell(cell);
-        return;
-      }
-      return;
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Operation failed: $e')));
     }
   }
 
   // ============ Confirm ============
   Future<void> _onConfirm() async {
-    // ถ้าเลือกเป็นห้อง → อัปเดตชื่อห้อง + baseStatus ข้ามทุก slot
-    if (_selected != null && _selected!['type'] == CellType.room) {
-      final x = _selected!['x'] as int;
-      final y = _selected!['y'] as int;
+    if (_selected == null || _selected!['type'] != CellType.room) return;
 
-      final newName = _roomCtrl.text.trim().isEmpty
-          ? _autoRoomNo(_selected!)
-          : _roomCtrl.text.trim();
-
-      // 1) sync room name ใน Base (ชนิดยังเป็น room)
-      await updateBaseCellTypeAt(
-        floor: floor,
-        x: x,
-        y: y,
-        type: CellType.room,
-        roomNo: newName,
+    final int? id = _selected!['id'] as int?;
+    if (id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot save: cell id not found')),
       );
-
-      // 2) อัปเดต BASE status (ทุก slot) โดยไม่แตะ reservations
-      final newBase = (_status == RoomStatus.free)
-          ? RoomStatus.free
-          : RoomStatus.disabled;
-      await applyBaseStatusAllSlotsAt(
-        floorNo: floor,
-        x: x,
-        y: y,
-        newBase: newBase,
-      );
+      return;
     }
+
+    final newName = _roomCtrl.text.trim();
+    final oldName = _initialRoomNo ?? '';
+    final oldBase = _initialBaseStatus ?? RoomStatus.disabled;
+    final newBase = (_status == RoomStatus.free)
+        ? RoomStatus.free
+        : RoomStatus.disabled;
+
+    final bool needUpdateName = newName.isNotEmpty && newName != oldName;
+    final bool needUpdateBase = newBase != oldBase;
+
+    final slotText = _slotLabel ?? slotId;
+    final baseTextOld = (oldBase == RoomStatus.free) ? 'Enable' : 'Disable';
+    final baseTextNew = (newBase == RoomStatus.free) ? 'Enable' : 'Disable';
+
+    // สร้างข้อความสรุปการเปลี่ยนแปลงใน dialog
+    final nameLine = needUpdateName
+        ? '• Room name: "$oldName" → "$newName"\n'
+        : '• Room name: (no change)\n';
+
+    final baseLine = needUpdateBase
+        ? '• BASE status: $baseTextOld → $baseTextNew (applies across all slots; pending/reserved kept)\n'
+        : '• BASE status: (no change)\n';
 
     await showAirDialog(
       context,
@@ -334,9 +389,7 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
                   ),
                   SizedBox(height: 16),
                   Text(
-                    'Floor: $floor\nTime: ${kTimeSlots.firstWhere((s) => s["id"] == slotId)["label"]}\n'
-                    '• Updated base types immediately (room/decoration/empty)\n'
-                    '• Updated BASE status across all time slots (pending/reserved kept)\n',
+                    'Floor: $floor\nTime: $slotText\n$nameLine$baseLine',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -352,8 +405,156 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
                 AppButton.solid(
                   label: 'Confirm',
                   onPressed: () async {
-                    // ปิด popup ยืนยันก่อน
-                    Navigator.pop(context);
+                    try {
+                      // ไม่มีอะไรเปลี่ยน → ปิด dialog + toast เบา ๆ
+                      if (!needUpdateName && !needUpdateBase) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('No changes')),
+                        );
+                        return;
+                      }
+
+                      // 1) อัปเดตชื่อ—เฉพาะกรณีที่ "มีการเปลี่ยน" และ "ไม่ว่าง"
+                      if (needUpdateName) {
+                        bool didSwap = false;
+
+                        try {
+                          await _api.updateRoomNo(id: id, roomNo: newName);
+                          // rename สำเร็จ
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Rename successful'),
+                              ),
+                            );
+                          });
+                        } on DioException catch (e) {
+                          if (e.response?.statusCode == 409) {
+                            final data = (e.response?.data is Map)
+                                ? (e.response!.data as Map)
+                                : const {};
+
+                            // กรณีชนห้องที่ซ่อนอยู่ (is_hidden = 1) → auto-swap ผ่าน API เดิม
+                            if (data['duplicate_hidden'] == true &&
+                                data['hidden_cell_id'] != null) {
+                              final swapRes = await _api.swapWithHidden(
+                                visibleId: id,
+                                hiddenId: (data['hidden_cell_id'] as num)
+                                    .toInt(),
+                              );
+                              final fromName =
+                                  (swapRes['from']?['room_no'] ??
+                                          swapRes['from']?['roomNo'] ??
+                                          _initialRoomNo ??
+                                          '')
+                                      .toString();
+                              final toName =
+                                  (swapRes['to']?['room_no'] ??
+                                          swapRes['to']?['roomNo'] ??
+                                          newName)
+                                      .toString();
+
+                              didSwap = true;
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Swapped "$fromName" ↔ "$toName"',
+                                    ),
+                                  ),
+                                );
+                              });
+                            } else {
+                              // กรณีชนกับห้องที่มองเห็นอยู่ (is_hidden = 0) → หา cell ต้นเหตุจาก working แล้วสั่ง swap (visible↔visible)
+                              final conflict = working.firstWhere(
+                                (c) =>
+                                    c['type'] == CellType.room &&
+                                    (c['hidden'] != true) &&
+                                    (c['roomNo']?.toString() == newName),
+                                orElse: () => <String, dynamic>{},
+                              );
+
+                              if (conflict.isNotEmpty &&
+                                  conflict['id'] != null) {
+                                final swapRes = await _api.swapWithHidden(
+                                  visibleId: id,
+                                  hiddenId: (conflict['id'] as num)
+                                      .toInt(), // ใช้เอ็นพอยต์เดิม แต่มือถือ visible↔visible ได้แล้ว
+                                );
+                                final fromName =
+                                    (swapRes['from']?['room_no'] ??
+                                            swapRes['from']?['roomNo'] ??
+                                            _initialRoomNo ??
+                                            '')
+                                        .toString();
+                                final toName =
+                                    (swapRes['to']?['room_no'] ??
+                                            swapRes['to']?['roomNo'] ??
+                                            newName)
+                                        .toString();
+
+                                didSwap = true;
+                                WidgetsBinding.instance.addPostFrameCallback((
+                                  _,
+                                ) {
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Swapped "$fromName" ↔ "$toName"',
+                                      ),
+                                    ),
+                                  );
+                                });
+                              } else {
+                                // หา conflict ไม่เจอ → โยนต่อให้ handler เดิม
+                                rethrow;
+                              }
+                            }
+                          } else {
+                            // error อื่น ๆ → โยนต่อ
+                            rethrow;
+                          }
+                        }
+                      }
+
+                      // 2) อัปเดตสถานะ BASE—เฉพาะกรณีที่เปลี่ยนจริง
+                      if (needUpdateBase) {
+                        await _api.updateBaseStatus(id: id, base: newBase);
+                      }
+
+                      if (mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(const SnackBar(content: Text('Saved')));
+                        await _closeSelectionAndSave();
+                      }
+                    } on DioException catch (e) {
+                      Navigator.pop(context);
+                      // 409 (duplicate) → อาจชนกับห้อง visible/hidden
+                      final code = e.response?.statusCode;
+                      final msg =
+                          (e.response?.data is Map &&
+                              e.response?.data['message'] != null)
+                          ? e.response?.data['message'].toString()
+                          : e.message;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Save failed${code != null ? ' ($code)' : ''}: $msg',
+                          ),
+                        ),
+                      );
+                    } catch (e) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Save failed: $e')),
+                      );
+                    }
                   },
                 ),
                 const SizedBox(height: 14),
@@ -378,8 +579,14 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
     final showRoomForm = hasSelection && _selected!['type'] == CellType.room;
 
     return Scaffold(
+      backgroundColor: AppColors.onPrimary,
       appBar: AppBar(
-        title: Text('Edit (Floor $floor)'),
+        backgroundColor: AppColors.oceanDeep,
+        foregroundColor: Colors.white,
+        title: Text(
+          'Edit (Floor $floor)',
+          style: TextStyle(fontSize: 23, fontWeight: FontWeight.w500),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.priority_high_rounded),
@@ -402,6 +609,7 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
             decoration: const BoxDecoration(color: Color(0xFFF7F8FA)),
             child: Row(
               children: [
+                const SizedBox(width: 8),
                 _pill(
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<int>(
@@ -424,14 +632,24 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: slotId,
-                      items: kTimeSlots
-                          .map(
-                            (s) => DropdownMenuItem(
-                              value: s['id'],
-                              child: Text(s['label']!),
-                            ),
-                          )
-                          .toList(),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'S1',
+                          child: Text('08:00-10:00'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'S2',
+                          child: Text('10:00-12:00'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'S3',
+                          child: Text('13:00-15:00'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'S4',
+                          child: Text('15:00-17:00'),
+                        ),
+                      ],
                       onChanged: (v) {
                         if (v == null) return;
                         slotId = v;
@@ -446,16 +664,21 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
 
           const SizedBox(height: 6),
 
-          // ===== แผนที่ (ใช้ MapFloor เดิม) =====
-          MapFloor(
-            role: MapRole.staff,
-            floor: floor,
-            slotId: slotId,
-            cells: working,
-            onCellTap: (x, y, _) {
-              final c = _cellAt(x, y);
-              _selectCell(c);
-            },
+          // ===== MapFloor เดิม) =====
+          SizedBox(
+            height: 234,
+            child: _loading
+                ? const SizedBox.shrink()
+                : MapFloor(
+                    role: MapRole.staff,
+                    floor: floor,
+                    slotId: slotId,
+                    cells: working,
+                    onCellTap: (x, y, _) {
+                      final c = _cellAt(x, y);
+                      _selectCell(c);
+                    },
+                  ),
           ),
 
           // ===== Toolbar (แสดงเมื่อมี selection เท่านั้น) =====
@@ -468,7 +691,18 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
               borderRadius: BorderRadius.circular(12),
               color: const Color(0xFFDBDBDB),
             ),
-            child: showToolbar ? _toolBar() : const SizedBox.shrink(),
+            child: showToolbar
+                ? _toolBar()
+                : Align(
+                    child: Text(
+                      'Please select a cell',
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontSize: 17,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
           ),
 
           // ===== Form (เฉพาะห้อง) =====
@@ -481,28 +715,44 @@ class _FloorEditorScreenState extends State<FloorEditorScreen> {
           // ===== Bottom actions (แสดงเมื่อมี selection เท่านั้น) =====
           const Spacer(),
           if (hasSelection)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: AppButton.outline(
-                      outlineColor: AppColors.danger,
-                      foregroundColor: AppColors.danger,
-                      label: 'Cancel',
-                      onPressed: () => _loadWorking(),
+            showRoomForm
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: AppButton.outline(
+                            outlineColor: AppColors.danger,
+                            foregroundColor: AppColors.danger,
+                            label: 'Cancel',
+                            onPressed: () => _loadWorking(),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: AppButton.solid(
+                            label: 'Confirm',
+                            onPressed: _onConfirm,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: AppButton.outline(
+                            outlineColor: AppColors.danger,
+                            foregroundColor: AppColors.danger,
+                            label: 'Cancel',
+                            onPressed: () => _loadWorking(),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: AppButton.solid(
-                      label: 'Confirm',
-                      onPressed: _onConfirm,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           const SizedBox(height: 20),
         ],
       ),
