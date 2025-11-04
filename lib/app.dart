@@ -9,6 +9,7 @@ import 'package:room_reservation_system_app/features/staff/screens/floor_editor_
 import 'package:room_reservation_system_app/features/staff/screens/staff_booking_screen.dart';
 import 'package:room_reservation_system_app/features/test_screen.dart';
 import 'package:room_reservation_system_app/features/user/screens/user_booking_screen.dart';
+import 'package:room_reservation_system_app/features/user/screens/user_home_screen.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -30,6 +31,7 @@ class App extends StatelessWidget {
       // home: ApproverAccountScreen(),
       // home: ApproverHistoryScreen(),
       // home: ApproverRequestScreen(),
+      // home: UserHomeScreen(),
     );
   }
 }

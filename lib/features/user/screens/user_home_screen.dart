@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:room_reservation_system_app/core/theme/theme.dart';
 
+import 'package:room_reservation_system_app/core/theme/theme.dart';
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
 import 'package:room_reservation_system_app/features/user/root.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
@@ -17,8 +17,15 @@ class UserHomeScreen extends StatefulWidget {
 
 class _UserHomeScreenState extends State<UserHomeScreen> {
   String apiUrl = 'http://192.168.3.100:3000/api/dashboard';
+  String apiDailyReservation =
+      'http://192.168.3.100:3000/api/reservations/daily?userId=1';
+
+  // String apiDailyReservation =
+  // 'http://192.168.3.100:3000/api/reservations/daily?userId=';
 
   List<Map<String, dynamic>> _availabilityData = [];
+  List<Map<String, dynamic>> _dailyReservations = [];
+
   bool _isLoading = true;
   String _errorMessage = '';
   Timer? _timer;
@@ -44,7 +51,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchDataImmediately();
+    _fetchData();
   }
 
   @override
@@ -53,11 +60,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     super.dispose();
   }
 
-  void _fetchDataImmediately() {
-    _fetchDashboardSummary();
-    _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (mounted) _fetchDashboardSummary();
-    });
+  Future<void> _fetchData() async {
+    await _fetchDashboardSummary();
+    await _fetchDailyReservation();
   }
 
   Future<void> _fetchDashboardSummary() async {
@@ -68,15 +73,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       });
 
       final response = await http.get(Uri.parse(apiUrl));
-      print('📡 API Response Code: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final List<dynamic> rawList = data['available_by_floor_slot'] ?? [];
-
         final List<dynamic> list = rawList;
-
-        print('✅ ได้ข้อมูลทั้งหมด ${list.length} แถว');
 
         final grouped = <String, Map<String, dynamic>>{};
         for (var item in list) {
@@ -101,9 +101,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         throw Exception('Failed to load data (Status: ${response.statusCode})');
       }
     } catch (e) {
-      print(' Error fetching dashboard: $e');
       setState(() {
-        _errorMessage = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+        _errorMessage = 'Unable to connect to server';
         _availabilityData = [];
         _isLoading = false;
       });
@@ -114,7 +113,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     }
   }
 
-Widget _buildFloorCard(
+  Widget _buildFloorCard(
     String title,
     String imageAsset,
     Widget Function({
@@ -225,7 +224,106 @@ Widget _buildFloorCard(
         );
       }).toList(),
     );
-    // *** สิ้นสุดส่วนที่แก้ไข ***
+  }
+
+  Future<void> _fetchDailyReservation() async {
+    try {
+      final response = await http.get(Uri.parse(apiDailyReservation));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _dailyReservations = List<Map<String, dynamic>>.from(
+            data['data'] ?? [],
+          );
+        });
+      } else {
+        print('Failed to fetch daily reservation (${response.statusCode})');
+      }
+    } catch (e) {
+      print('Error fetching daily reservation: $e');
+    }
+  }
+
+  Widget _buildDailyReservationPanel() {
+    if (_dailyReservations.isEmpty) {
+      return const Center(
+        child: Text(
+          'There are no reservation requests today.',
+          style: TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: _dailyReservations.length,
+      itemBuilder: (context, index) {
+        final item = _dailyReservations[index];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          (item['status'] ?? '').toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.amber,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Floor ${item['floor']}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Text(
+                  'R ${item['room_name']}',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Slot ${item['slot_label']}',
+                  style: TextStyle(color: Colors.white, fontSize: 13),
+                ),
+                Text(
+                  '${item['full_datetime'] ?? ''}',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(height: 1, color: Colors.white30),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -351,70 +449,7 @@ Widget _buildFloorCard(
                 height: 205,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    'Pending',
-                                    style: TextStyle(
-                                      color: Colors.amber,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Floor 5',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const Text(
-                            'R501',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Slot 08:00-10:00',
-                            style: TextStyle(color: Colors.white, fontSize: 13),
-                          ),
-                          Text(
-                            '22 Oct 2025 - 07:48 AM',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Container(height: 1, color: Colors.white30),
-                    ],
-                  ),
+                  child: _buildDailyReservationPanel(),
                 ),
               ),
               const SizedBox(height: 15),
