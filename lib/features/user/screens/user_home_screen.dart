@@ -1,4 +1,7 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:room_reservation_system_app/core/theme/theme.dart';
 
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
@@ -13,12 +16,12 @@ class UserHomeScreen extends StatefulWidget {
 }
 
 class _UserHomeScreenState extends State<UserHomeScreen> {
-  final List<Map<String, dynamic>> availabilityData = [
-    {'time': '8am-10am', 'f3': 10, 'f4': 5, 'f5': 13},
-    {'time': '10am-12pm', 'f3': 6, 'f4': 8, 'f5': 16},
-    {'time': '1pm-3pm', 'f3': 2, 'f4': 3, 'f5': 9},
-    {'time': '3pm-5pm', 'f3': 10, 'f4': 5, 'f5': 4},
-  ];
+  String apiUrl = 'http://192.168.3.100:3000/api/dashboard';
+
+  List<Map<String, dynamic>> _availabilityData = [];
+  bool _isLoading = true;
+  String _errorMessage = '';
+  Timer? _timer;
 
   final List<Map<String, dynamic>> floorData = const [
     {
@@ -38,7 +41,80 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     },
   ];
 
-  Widget _buildFloorCard(
+  @override
+  void initState() {
+    super.initState();
+    _fetchDataImmediately();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _fetchDataImmediately() {
+    _fetchDashboardSummary();
+    _timer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) _fetchDashboardSummary();
+    });
+  }
+
+  Future<void> _fetchDashboardSummary() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = '';
+      });
+
+      final response = await http.get(Uri.parse(apiUrl));
+      print('📡 API Response Code: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final List<dynamic> rawList = data['available_by_floor_slot'] ?? [];
+
+        final List<dynamic> list = rawList;
+
+        print('✅ ได้ข้อมูลทั้งหมด ${list.length} แถว');
+
+        final grouped = <String, Map<String, dynamic>>{};
+        for (var item in list) {
+          final slot = item['slot_label'];
+          final floor = item['floor'];
+          final available = item['available_rooms'];
+
+          grouped.putIfAbsent(
+            slot,
+            () => {'time': slot, 'f3': 0, 'f4': 0, 'f5': 0},
+          );
+          if (floor == 3) grouped[slot]!['f3'] = available;
+          if (floor == 4) grouped[slot]!['f4'] = available;
+          if (floor == 5) grouped[slot]!['f5'] = available;
+        }
+
+        setState(() {
+          _availabilityData = grouped.values.toList();
+          _isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load data (Status: ${response.statusCode})');
+      }
+    } catch (e) {
+      print(' Error fetching dashboard: $e');
+      setState(() {
+        _errorMessage = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+        _availabilityData = [];
+        _isLoading = false;
+      });
+
+      Future.delayed(const Duration(seconds: 5), () {
+        if (mounted) _fetchDashboardSummary();
+      });
+    }
+  }
+
+Widget _buildFloorCard(
     String title,
     String imageAsset,
     Widget Function({
@@ -66,6 +142,92 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
+  Widget _buildDashboardTable() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+    if (_errorMessage.isNotEmpty) {
+      return Center(
+        child: Text(
+          _errorMessage,
+          style: const TextStyle(
+            color: Colors.redAccent,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+    if (_availabilityData.isEmpty) {
+      return const Center(
+        child: Text(
+          "No available time slots or data is empty.",
+          style: TextStyle(color: Colors.white70),
+        ),
+      );
+    }
+
+    return Column(
+      children: _availabilityData.map((row) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 1),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: Text(
+                  row['time'],
+                  textAlign: TextAlign.start,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '${row['f3']}',
+                    style: const TextStyle(
+                      color: Color(0xFFADFF2F),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '${row['f4']}',
+                    style: const TextStyle(
+                      color: Color(0xFFADFF2F),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    '${row['f5']}',
+                    style: const TextStyle(
+                      color: Color(0xFFADFF2F),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+    // *** สิ้นสุดส่วนที่แก้ไข ***
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,13 +241,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
         ),
         child: Padding(
-          padding: EdgeInsetsGeometry.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 40),
-              Text(
-                'Dashboard',
+              const Text(
+                'HOME',
                 style: TextStyle(
                   fontSize: 35,
                   fontWeight: FontWeight.bold,
@@ -98,7 +260,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 height: 135,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    vertical: 12,
+                    vertical: 11,
                     horizontal: 16,
                   ),
                   child: Column(
@@ -115,7 +277,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
-                              textAlign: TextAlign.center,
                             ),
                           ),
                           Expanded(
@@ -153,60 +314,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 2),
-                      for (var row in availabilityData)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 1),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  row['time'],
-                                  textAlign: TextAlign.start,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Center(
-                                  child: Text(
-                                    '${row['f3']}',
-                                    style: const TextStyle(
-                                      color: Color(0xFFADFF2F), // เขียวเรืองแสง
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Center(
-                                  child: Text(
-                                    '${row['f4']}',
-                                    style: const TextStyle(
-                                      color: Color(0xFFADFF2F),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Center(
-                                  child: Text(
-                                    '${row['f5']}',
-                                    style: const TextStyle(
-                                      color: Color(0xFFADFF2F),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      const SizedBox(height: 4),
+                      Expanded(child: _buildDashboardTable()),
                     ],
                   ),
                 ),
@@ -297,6 +406,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                             style: TextStyle(
                               color: Colors.white70,
                               fontSize: 13,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
@@ -320,7 +430,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => UserRoot.goTo(context, 1),
+                    onTap: () => UserRoot.goTo(context, 2),
                     child: Text(
                       "See All",
                       style: TextStyle(
