@@ -2,10 +2,14 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/shared/widgets/maps/map_types.dart';
 import 'package:room_reservation_system_app/features/cells/data/cells_api.dart';
+
+import 'package:room_reservation_system_app/services/requestservices.dart';
 
 class UserBookingScreen extends StatefulWidget {
   const UserBookingScreen({super.key});
@@ -16,9 +20,11 @@ class UserBookingScreen extends StatefulWidget {
 
 class _UserBookingScreenPageState extends State<UserBookingScreen>
     with TickerProviderStateMixin {
+  final RequestServices _req = RequestServices();
   final _api = CellsApi();
   int? expandedFloor; // null = ยังไม่กดอะไรเลย
   final String _currentUsername = 'User123';
+  Map<String, dynamic>? currentSelectedCell;
 
   /// ใช้ slotId จริง (S1–S4) แล้วค่อย map เป็น label ตอนโชว์
   String _selectedSlotId = 'S1';
@@ -375,8 +381,10 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
                                                   _selectedSlotId,
                                                 )] ??
                                                 const [],
-                                            onCellTap: (x, y, cell) =>
-                                                _showBookingPopup(cell),
+                                            onCellTap: (x, y, cell) {
+                                              currentSelectedCell = cell;
+                                              _showBookingPopup(cell);
+                                            },
                                           ),
                                         ),
                                       )
@@ -460,8 +468,31 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
     required String slot,
     required String user,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return Random().nextDouble() < 0.6;
+    try {
+      final cellId = currentSelectedCell!['id']; // << เดี๋ยวเราจะอธิบาย
+
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: "http://172.25.21.93:3000",
+          headers: {"Content-Type": "application/json"},
+        ),
+      );
+
+      final res = await dio.post(
+        "/reservations/request",
+        data: {
+          "cell_id": cellId,
+          "slot_id": _selectedSlotId,
+          "requested_by": 1, // user id login จริง
+        },
+      );
+
+      print(res.data);
+      return true;
+    } catch (e) {
+      print("DIO ERR => $e");
+      return false;
+    }
   }
 
   Future<void> _showResultPopup({required bool ok}) async {
