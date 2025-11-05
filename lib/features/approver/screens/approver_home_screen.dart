@@ -43,7 +43,8 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
     fetchDailyRequests();
   }
 
-  final apiBaseUrl = 'http://192.168.3.100:3000';
+  // final apiBaseUrl = 'http://192.168.3.100:3000';
+  final apiBaseUrl = 'http://172.25.21.26:3000';
 
   Future<void> fetchDashboard() async {
     try {
@@ -110,7 +111,7 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
   Future<void> fetchDailyRequests() async {
     try {
       final response = await http.get(
-        Uri.parse('$apiBaseUrl/api/reservations/daily'),
+        Uri.parse('$apiBaseUrl/api/dailyRequest'),
       );
       if (response.statusCode == 200) {
         final jsonData = json.decode(response.body);
@@ -306,7 +307,7 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'By: ${request['requested_by_name'] ?? '-'}',
+                    'By: ${request['requested_by'] ?? '-'}',
                     style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                 ],

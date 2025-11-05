@@ -18,7 +18,6 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
   Map<String, dynamic>? overallSummary;
   List<Map<String, dynamic>> floorSummary = [];
 
-  // *** ส่วนที่ใช้ร่วมกัน: floorData เรียง 3, 4, 5 (สำหรับ FLOOR LIST) ***
   final List<Map<String, dynamic>> floorData = const [
     {
       'title': 'Floor 3',
@@ -36,7 +35,6 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
       'panel': PanelPresets.pink,
     },
   ];
-  // -------------------------------------------------------------------
 
   @override
   void initState() {
@@ -46,7 +44,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
 
   Future<void> fetchDashboard() async {
     try {
-      const apiBaseUrl = 'http://192.168.3.100:3000';
+      // const apiBaseUrl = 'http://192.168.3.100:3000';
+      const apiBaseUrl = 'http://172.25.21.26:3000';
       final response = await http.get(Uri.parse('$apiBaseUrl/api/dashboard'));
 
       if (response.statusCode == 200) {
@@ -56,10 +55,10 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
           floorSummary = List<Map<String, dynamic>>.from(jsonData['floor_summary']);
         });
       } else {
-        debugPrint('❌ Failed to load dashboard: ${response.statusCode}');
+        debugPrint('Failed to load dashboard: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('❌ Error fetching dashboard: $e');
+      debugPrint('Error fetching dashboard: $e');
     }
   }
 
@@ -246,7 +245,6 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
   @override
   Widget build(BuildContext context) {
     
-    // 1. สร้างลิสต์สำหรับ Floor Panels โดยกลับลำดับ (5, 4, 3)
     final reversedFloorData = floorData.reversed.toList();
     
     return Scaffold(
@@ -329,7 +327,6 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  // *** ส่วนที่ 1: FLOOR LIST (แนวนอน) - ใช้ floorData ดั้งเดิม (3, 4, 5) ***
                   SizedBox(
                     height: 80,
                     child: ListView.separated(
@@ -354,7 +351,6 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                 ],
               ),
               const SizedBox(height: 35),
-              // *** ส่วนที่ 2: Floor Panels (สรุปสถานะ) - ใช้ reversedFloorData (5, 4, 3) ***
               for (var i = 0; i < reversedFloorData.length; i++) ...[
                 Builder(builder: (context) {
                   final floorData = reversedFloorData[i]; // ใช้ข้อมูลที่กลับลำดับแล้ว

@@ -16,9 +16,12 @@ class UserHomeScreen extends StatefulWidget {
 }
 
 class _UserHomeScreenState extends State<UserHomeScreen> {
-  String apiUrl = 'http://192.168.3.100:3000/api/dashboard';
+  // String apiUrl = 'http://192.168.3.100:3000/api/dashboard';
+  String apiUrl = 'http://172.25.21.26:3000/api/dashboard';
+  // String apiDailyReservation =
+  //     'http://192.168.3.100:3000/api/reservations/daily?userId=1';
   String apiDailyReservation =
-      'http://192.168.3.100:3000/api/reservations/daily?userId=1';
+      'http://172.25.21.26:3000/api/reservations/daily?userId=1';
 
   // String apiDailyReservation =
   // 'http://192.168.3.100:3000/api/reservations/daily?userId=';
@@ -152,7 +155,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         child: Text(
           _errorMessage,
           style: const TextStyle(
-            color: Colors.redAccent,
+            color: Colors.white70,
             fontWeight: FontWeight.bold,
           ),
           textAlign: TextAlign.center,
