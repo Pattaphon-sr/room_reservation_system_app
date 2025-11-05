@@ -627,15 +627,17 @@ class _ActivityTileStaff extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                item.roomCode,
-                style: TextStyle(
-                  color: item.status == ApprovalStatus.approved
-                      ? AppColors.success
-                      : Colors.black,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 18,
-                ),
-              ),
+                  item.roomCode,
+                    style: TextStyle(
+                      color: item.status == ApprovalStatus.rejected
+                          ? const Color(0xFFE62727)  // ✅ แดง (rejected)
+                          : item.status == ApprovalStatus.approved
+                            ? const Color(0xFF399918) // เขียว (approved)
+                            : Colors.black87,          // ดำ (pending)
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                     ),
+                  ),
             ],
           ),
 
