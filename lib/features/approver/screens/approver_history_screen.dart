@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
+import 'package:room_reservation_system_app/features/approver/service.dart'; // ✅ เพิ่มบรรทัดนี้
+
 
 // --------------------- MODEL ---------------------
 enum DecisionStatus { approved, disapproved }
@@ -37,89 +39,126 @@ class ApproverHistoryScreen extends StatefulWidget {
 
 class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
   final TextEditingController _search = TextEditingController();
+  final ApproverHistoryService _service = ApproverHistoryService(); // ✅ เพิ่ม service
 
-  // ---------- Mock data ----------
-  final List<ApproverHistoryItem> _items = [
-    // October 2025
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 10, 22, 8, 25),
-      status: DecisionStatus.approved,
-      floor: 'Floor5',
-      roomCode: 'R501',
-      slot: '08:00-10:00',
-      requesterName: 'Mr. Adam',
-    ),
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 10, 21, 10, 15),
-      status: DecisionStatus.disapproved,
-      floor: 'Floor4',
-      roomCode: 'R402',
-      slot: '10:00-12:00',
-      requesterName: 'Ms. Bella',
-      remark: 'The room is currently being renovated.',
-    ),
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 10, 19, 7, 56),
-      status: DecisionStatus.approved,
-      floor: 'Floor5',
-      roomCode: 'R503',
-      slot: '08:00-10:00',
-      requesterName: 'Mr. David',
-    ),
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 10, 18, 14, 10),
-      status: DecisionStatus.approved,
-      floor: 'Floor3',
-      roomCode: 'R305',
-      slot: '14:00-16:00',
-      requesterName: 'Dr. Grace',
-    ),
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 10, 17, 9, 20),
-      status: DecisionStatus.disapproved,
-      floor: 'Floor3',
-      roomCode: 'R304',
-      slot: '10:00-12:00',
-      requesterName: 'Mr. Ford',
-      remark: 'Power maintenance scheduled.',
-    ),
+  List<ApproverHistoryItem> _items = []; // ✅ เปลี่ยนจาก final เป็น var
+  bool _isLoading = true; // ✅ เพิ่ม loading state
+  String? _errorMessage; // ✅ เพิ่ม error state
 
-    // September 2025
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 9, 27, 7, 39),
-      status: DecisionStatus.approved,
-      floor: 'Floor5',
-      roomCode: 'R501',
-      slot: '08:00-10:00',
-      requesterName: 'Mr. Ken',
-    ),
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 9, 13, 10, 48),
-      status: DecisionStatus.approved,
-      floor: 'Floor4',
-      roomCode: 'R408',
-      slot: '10:00-12:00',
-      requesterName: 'Ms. Iris',
-    ),
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 9, 5, 9, 12),
-      status: DecisionStatus.disapproved,
-      floor: 'Floor4',
-      roomCode: 'R407',
-      slot: '09:00-11:00',
-      requesterName: 'Mr. John',
-      remark: 'Room under maintenance',
-    ),
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory(); // ✅ โหลดข้อมูลตอนเปิดหน้า
+  }
 
-    // November 2025 (ไว้ให้เห็นแท็บทางขวา)
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 11, 5, 9, 15),
-      status: DecisionStatus.approved,
-      floor: 'Floor2',
-      roomCode: 'R201',
-      slot: '09:00-11:00',
-      requesterName: 'Ms. Pam',
-    ),
+  Future<void> _loadHistory() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final items = await _service.fetchHistory();
+      setState(() {
+        _items = items;
+        _isLoading = false;
+      });
+      print('✅ Loaded ${items.length} items');
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+      print('❌ Error: $e');
+    }
+  }
+  // // ---------- Mock data ----------
+  // final List<ApproverHistoryItem> _items = [
+  //   // October 2025
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 10, 22, 8, 25),
+  //     status: DecisionStatus.approved,
+  //     floor: 'Floor5',
+  //     roomCode: 'R501',
+  //     slot: '08:00-10:00',
+  //     requesterName: 'Mr. Adam',
+  //   ),
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 10, 21, 10, 15),
+  //     status: DecisionStatus.disapproved,
+  //     floor: 'Floor4',
+  //     roomCode: 'R402',
+  //     slot: '10:00-12:00',
+  //     requesterName: 'Ms. Bella',
+  //     remark: 'The room is currently being renovated.',
+  //   ),
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 10, 19, 7, 56),
+  //     status: DecisionStatus.approved,
+  //     floor: 'Floor5',
+  //     roomCode: 'R503',
+  //     slot: '08:00-10:00',
+  //     requesterName: 'Mr. David',
+  //   ),
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 10, 18, 14, 10),
+  //     status: DecisionStatus.approved,
+  //     floor: 'Floor3',
+  //     roomCode: 'R305',
+  //     slot: '14:00-16:00',
+  //     requesterName: 'Dr. Grace',
+  //   ),
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 10, 17, 9, 20),
+  //     status: DecisionStatus.disapproved,
+  //     floor: 'Floor3',
+  //     roomCode: 'R304',
+  //     slot: '10:00-12:00',
+  //     requesterName: 'Mr. Ford',
+  //     remark: 'Power maintenance scheduled.',
+  //   ),
+
+  //   // September 2025
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 9, 27, 7, 39),
+  //     status: DecisionStatus.approved,
+  //     floor: 'Floor5',
+  //     roomCode: 'R501',
+  //     slot: '08:00-10:00',
+  //     requesterName: 'Mr. Ken',
+  //   ),
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 9, 13, 10, 48),
+  //     status: DecisionStatus.approved,
+  //     floor: 'Floor4',
+  //     roomCode: 'R408',
+  //     slot: '10:00-12:00',
+  //     requesterName: 'Ms. Iris',
+  //   ),
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 9, 5, 9, 12),
+  //     status: DecisionStatus.disapproved,
+  //     floor: 'Floor4',
+  //     roomCode: 'R407',
+  //     slot: '09:00-11:00',
+  //     requesterName: 'Mr. John',
+  //     remark: 'Room under maintenance',
+  //   ),
+
+  //   // November 2025 (ไว้ให้เห็นแท็บทางขวา)
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 11, 5, 9, 15),
+  //     status: DecisionStatus.approved,
+  //     floor: 'Floor2',
+  //     roomCode: 'R201',
+  //     slot: '09:00-11:00',
+  //     requesterName: 'Ms. Pam',
+  //   ),
+  // ];
+
+
+  final List<ApproverHistoryItem> connected_api_items = [
+    
   ];
 
   // ===== Helpers: format =====
@@ -180,7 +219,7 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
     List<Widget> tiles(List<ApproverHistoryItem> list) => List<Widget>.generate(
           list.isEmpty ? 1 : (list.length * 2 - 1),
           (index) {
-            if (list.isEmpty) return const _Empty(text: 'No data');
+            if (list.isEmpty) return SizedBox.shrink();
             if (index.isOdd) {
               return const Divider(height: 22, thickness: 0.9, color: Color(0xFFE1E6EB));
             }
@@ -190,22 +229,22 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
         );
 
     return [
-      const Text(
-        'Approved',
-        style: TextStyle(color: Colors.black54, fontSize: 17, fontWeight: FontWeight.w700),
-      ),
+      // const Text(
+      //   'Approved',
+      //   style: TextStyle(color: Colors.black54, fontSize: 17, fontWeight: FontWeight.w700),
+      // ),
       const SizedBox(height: 10),
       ...tiles(approved),
 
-      const SizedBox(height: 24),
-      const Divider(height: 0, thickness: 0.8, color: Color(0xFFE1E6EB)),
-      const SizedBox(height: 18),
+      // const SizedBox(height: 24),
+      // const Divider(height: 0, thickness: 0.8, color: Color(0xFFE1E6EB)),
+      // const SizedBox(height: 18),
 
-      const Text(
-        'Rejected',
-        style: TextStyle(color: Colors.black54, fontSize: 17, fontWeight: FontWeight.w700),
-      ),
-      const SizedBox(height: 10),
+      // const Text(
+      //   'Rejected',
+      //   style: TextStyle(color: Colors.black54, fontSize: 17, fontWeight: FontWeight.w700),
+      // ),
+      const SizedBox(height: 5),
       ...tiles(rejected),
 
       const SizedBox(height: 12),
