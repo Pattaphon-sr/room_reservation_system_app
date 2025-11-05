@@ -281,71 +281,103 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
     }
 
     return Container(
-      
-      padding: const EdgeInsets.all(5),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          SizedBox(height: 10,),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-
                 children: [
-                  Text(
-                    datePart,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        'Room: ',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        '${request['room_name'] ?? '-'}  ${request['slot_label'] ?? ''}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    timePart,
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'By: ${request['requested_by'] ?? '-'}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  Row(
+                    children: [
+                      Text(
+                        'Request by: ',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        '${request['requested_by'] ?? '-'}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Room: ${request['room_name'] ?? '-'}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        (request['status'] ?? '').toString().toUpperCase(),
+                        style: TextStyle(
+                          color: Colors.amber,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                    Text(
-                      request['slot_label'] ?? '',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        timePart,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                (request['status'] ?? '').toString().toUpperCase(),
-                style: TextStyle(
-                  color: Colors.amber,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                      Text(
+                        ' • ',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        datePart,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 10),
           Container(height: 1, color: Colors.white30),
         ],
       ),
@@ -434,10 +466,11 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
               PanelPresets.purple(
                 width: double.infinity,
                 height: 210,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: dailyRequests.isEmpty
-                      ? const Center(
+                child: dailyRequests.isEmpty
+                    ? const Padding(
+                        // 1. คง Padding นี้ไว้สำหรับกรณีที่ 'list' ว่าง
+                        padding: EdgeInsets.all(16.0),
+                        child: Center(
                           child: Text(
                             'No pending requests today.',
                             style: TextStyle(
@@ -445,14 +478,20 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
                               fontSize: 14,
                             ),
                           ),
-                        )
-                      : ListView.builder(
-                          itemCount: dailyRequests.length,
-                          itemBuilder: (context, index) {
-                            return _buildRequestItem(dailyRequests[index]);
-                          },
                         ),
-                ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(
+                          16.0,
+                          20.0,
+                          16.0,
+                          10.0,
+                        ),
+                        itemCount: dailyRequests.length,
+                        itemBuilder: (context, index) {
+                          return _buildRequestItem(dailyRequests[index]);
+                        },
+                      ),
               ),
               const SizedBox(height: 15),
               Row(
