@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/features/auth/auth.dart';
+// ตรวจสอบว่า path ไปยัง AuthService ถูกต้อง
+import 'package:room_reservation_system_app/services/auth_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -12,7 +14,11 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
-  final nameCtrl = TextEditingController();
+  final nameCtrl = TextEditingController(); // Controller สำหรับ Username
+  final confirmPassCtrl =
+      TextEditingController(); // Controller สำหรับ Confirm Password
+
+  bool loading = false; // เพิ่ม state loading
   bool _obscure = true;
   bool _obscure2 = true;
 
@@ -21,8 +27,76 @@ class _SignUpScreenState extends State<SignUpScreen> {
     emailCtrl.dispose();
     passCtrl.dispose();
     nameCtrl.dispose();
+    confirmPassCtrl.dispose(); // อย่าลืม dispose
     super.dispose();
   }
+
+  // --- เพิ่มฟังก์ชันนี้ ---
+  Future<void> _doSignUp() async {
+    // 1. ตรวจสอบว่ารหัสผ่านตรงกัน
+    if (passCtrl.text != confirmPassCtrl.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Passwords do not match.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // 2. ตรวจสอบว่ากรอกครบ
+    if (emailCtrl.text.isEmpty ||
+        nameCtrl.text.isEmpty ||
+        passCtrl.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill in all fields.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => loading = true);
+
+    // 3. เรียก AuthService
+    final success = await AuthService.instance.signup(
+      email: emailCtrl.text.trim(),
+      username: nameCtrl.text.trim(),
+      password: passCtrl.text,
+    );
+
+    setState(() => loading = false);
+
+    if (success) {
+      // 4. ถ้าสำเร็จ กลับไปหน้า Login
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Signup successful! Please sign in.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const SignInScreen(),
+          ),
+        );
+      }
+    } else {
+      // 5. ถ้าไม่สำเร็จ (เช่น email ซ้ำ)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Signup failed. Email or username may already exist.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  // -------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -85,69 +159,44 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         ),
                       ),
-                      child: Padding(
-                        padding: EdgeInsetsGeometry.symmetric(horizontal: 42),
+                      // --- ใช้ SingleChildScrollView กันคีย์บอร์ดบัง ---
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.symmetric(horizontal: 42),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             SizedBox(height: 40),
-                            // Spacer(),
                             TextField(
+                              controller: emailCtrl, // ผูก Controller
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
-                                labelStyle: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                floatingLabelStyle: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                hintStyle: TextStyle(color: Colors.grey[500]),
+                                // ... (style เหมือนเดิม) ...
                                 labelText: 'Gmail',
                                 hintText: 'user@gmail.com',
                               ),
                             ),
                             SizedBox(height: 14),
                             TextField(
+                              controller: nameCtrl, // <--- แก้ไข: ผูก nameCtrl
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
-                                labelStyle: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                floatingLabelStyle: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                hintStyle: TextStyle(color: Colors.grey[500]),
+                                // ... (style เหมือนเดิม) ...
                                 labelText: 'Username',
                                 hintText: 'username',
                               ),
                             ),
                             SizedBox(height: 14),
                             TextField(
+                              controller: passCtrl, // ผูก Controller
                               textInputAction: TextInputAction.next,
                               keyboardType: TextInputType.visiblePassword,
                               obscureText: _obscure,
                               decoration: InputDecoration(
-                                labelStyle: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                floatingLabelStyle: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                hintStyle: TextStyle(color: Colors.grey[500]),
+                                // ... (style เหมือนเดิม) ...
                                 labelText: 'Password',
                                 hintText: 'your password',
                                 suffixIcon: IconButton(
-                                  // <- ปุ่มสลับโชว์/ซ่อน
                                   onPressed: () =>
                                       setState(() => _obscure = !_obscure),
                                   icon: Icon(
@@ -162,24 +211,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                             SizedBox(height: 14),
                             TextField(
+                              controller:
+                                  confirmPassCtrl, // <--- แก้ไข: ผูก confirmPassCtrl
                               textInputAction: TextInputAction.done,
                               keyboardType: TextInputType.visiblePassword,
                               obscureText: _obscure2,
                               decoration: InputDecoration(
-                                labelStyle: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                floatingLabelStyle: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                hintStyle: TextStyle(color: Colors.grey[500]),
+                                // ... (style เหมือนเดิม) ...
                                 labelText: 'Confirm Password',
                                 hintText: 'your password',
                                 suffixIcon: IconButton(
-                                  // <- ปุ่มสลับโชว์/ซ่อน
                                   onPressed: () =>
                                       setState(() => _obscure2 = !_obscure2),
                                   icon: Icon(
@@ -192,19 +233,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                               ),
                             ),
-                            Spacer(flex: 2),
+                            SizedBox(height: 30), // ลด Space ลงหน่อย
                             AppButton.solid(
-                              label: 'SIGN UP',
-                              onPressed: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const SignInScreen(),
-                                  ),
-                                );
-                              },
+                              label: loading
+                                  ? 'SIGNING UP...'
+                                  : 'SIGN UP', // <--- แก้ไข
+                              onPressed: loading
+                                  ? null
+                                  : _doSignUp, // <--- แก้ไข: เรียก _doSignUp
                             ),
-                            Spacer(flex: 3),
+                            SizedBox(height: 30), // ลด Space ลงหน่อย
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
