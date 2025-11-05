@@ -1,12 +1,11 @@
 // lib/features/user/pages/user_booking_page.dart
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
 import 'package:room_reservation_system_app/features/Staff/screens/floor_editor_screen.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/shared/widgets/maps/map_types.dart';
-import 'package:room_reservation_system_app/data/cells_seed.dart';
+import 'package:room_reservation_system_app/features/cells/data/cells_api.dart';
 
 class StaffBookingScreen extends StatefulWidget {
   const StaffBookingScreen({super.key});
@@ -17,8 +16,8 @@ class StaffBookingScreen extends StatefulWidget {
 
 class _StaffBookingScreenPageState extends State<StaffBookingScreen>
     with TickerProviderStateMixin {
+  final _api = CellsApi();
   int? expandedFloor; // null = ยังไม่กดอะไรเลย
-  final String _currentUsername = 'User123';
 
   /// ใช้ slotId จริง (S1–S4) แล้วค่อย map เป็น label ตอนโชว์
   String _selectedSlotId = 'S1';
@@ -30,24 +29,75 @@ class _StaffBookingScreenPageState extends State<StaffBookingScreen>
     'S3': '13:00 - 15:00',
     'S4': '15:00 - 17:00',
   };
+
   static String _labelOf(String slotId) => _slotIdToLabel[slotId] ?? '-';
 
-  // ========= NEW: cache เพื่อลด rebuild หนักของ cells =========
+  // ========= cache จาก API + สถานะโหลด =========
   final Map<String, List<Map<String, dynamic>>> _cellsCache = {};
+  final Set<String> _loadingKeys = {};
+  String _key(int floor, String slotId) => '$floor-$slotId';
 
-  List<Map<String, dynamic>> _getCells(int floor, String slotId) {
-    final key = '$floor-$slotId';
-    final cached = _cellsCache[key];
-    if (cached != null) return cached;
+  Future<void> _ensureCellsLoaded(int floor, String slotId) async {
+    final key = _key(floor, slotId);
+    if (_cellsCache.containsKey(key) || _loadingKeys.contains(key)) return;
+    _loadingKeys.add(key);
+    if (mounted) setState(() {});
+    // today -> YYYY-MM-DD
+    final now = DateTime.now();
+    final dateStr =
+        '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+    try {
+      final cells = await _api.getMap(
+        floor: floor,
+        slotId: slotId,
+        date: dateStr,
+      );
+      _cellsCache[key] = cells;
+    } catch (_) {
+      // ปล่อยว่างไว้ก่อน (จะได้ไม่พัง)
+    } finally {
+      _loadingKeys.remove(key);
+      if (mounted) setState(() {});
+    }
+  }
 
-    final built = buildCellsSlice(floor: floor, slotId: slotId);
-    _cellsCache[key] = built;
-    return built;
+  // กำหนด slot เริ่มต้นตามเวลาปัจจุบัน
+  String _resolveSlotIdForNow(DateTime t) {
+    final hm = t.hour * 60 + t.minute;
+    bool inRange(int h1, int m1, int h2, int m2) {
+      final a = h1 * 60 + m1, b = h2 * 60 + m2;
+      return hm >= a && hm < b;
+    }
+
+    if (inRange(8, 0, 10, 0)) return 'S1';
+    if (inRange(10, 0, 12, 0)) return 'S2';
+    if (inRange(13, 0, 15, 0)) return 'S3';
+    if (inRange(15, 0, 17, 0)) return 'S4';
+    // นอกช่วง ให้เลือกช่วงถัดไปที่ใกล้สุดแบบง่าย ๆ
+    if (hm < 8 * 60) return 'S1';
+    if (hm < 10 * 60) return 'S1';
+    if (hm < 12 * 60) return 'S2';
+    if (hm < 13 * 60) return 'S3';
+    if (hm < 15 * 60) return 'S3';
+    return 'S4';
   }
 
   // ใช้ระยะเวลาและ curve เดียวเพื่อให้ลื่น
   static const _kAnimDur = Duration(milliseconds: 260);
   static const _kAnimCurve = Curves.easeOutCubic;
+
+  @override
+  void initState() {
+    super.initState();
+    // initial slot = ตามเวลาปัจจุบัน (เช่น 10:51 -> S2)
+    _selectedSlotId = _resolveSlotIdForNow(DateTime.now());
+    // prefetch แต่ละชั้นที่มี (3,4,5) สำหรับ slot ปัจจุบัน
+    for (final f in [3, 4, 5]) {
+      _ensureCellsLoaded(f, _selectedSlotId);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -186,10 +236,11 @@ class _StaffBookingScreenPageState extends State<StaffBookingScreen>
               if (v == null) return;
               setState(() {
                 _selectedSlotId = v;
-                // ไม่ล้าง cache ทั้งหมด เพื่อให้การสลับชั้นยังใช้แคชได้
-                // เคลียร์เฉพาะ key ของ slot เก่าถ้าต้องการก็ได้
-                // แต่เพื่อความลื่น เรา "ไม่" ล้าง (ใช้ทิ้งไว้)
               });
+              // โหลดข้อมูล map ของ slot ใหม่นี้ (ทั้ง 3 ชั้น)
+              for (final f in [3, 4, 5]) {
+                _ensureCellsLoaded(f, _selectedSlotId);
+              }
             },
             items: items,
           ),
@@ -212,6 +263,9 @@ class _StaffBookingScreenPageState extends State<StaffBookingScreen>
     final bool isExpanded = expandedFloor == floor;
     final bool isOtherCollapsed =
         expandedFloor != null && expandedFloor != floor;
+
+    // เรียกโหลด map จาก API (ครั้งแรก/เมื่อยังไม่มี cache)
+    _ensureCellsLoaded(floor, _selectedSlotId);
 
     // ความสูงใช้ค่า double แน่นอนเพื่อเลี่ยง layout jitter
     final double targetContainerHeight = isExpanded
@@ -322,7 +376,11 @@ class _StaffBookingScreenPageState extends State<StaffBookingScreen>
                                               ).push(
                                                 MaterialPageRoute(
                                                   builder: (_) =>
-                                                      const FloorEditorScreen(),
+                                                      FloorEditorScreen(
+                                                        initialFloor: floor,
+                                                        initialSlotId:
+                                                            _selectedSlotId,
+                                                      ),
                                                 ),
                                               );
                                             },
@@ -330,10 +388,12 @@ class _StaffBookingScreenPageState extends State<StaffBookingScreen>
                                               floor: floor,
                                               slotId: _selectedSlotId,
                                               role: MapRole.staff,
-                                              cells: _getCells(
-                                                floor,
-                                                _selectedSlotId,
-                                              ),
+                                              cells:
+                                                  _cellsCache[_key(
+                                                    floor,
+                                                    _selectedSlotId,
+                                                  )] ??
+                                                  const [],
                                               onCellTap: (x, y, cell) {
                                                 // เปิดหน้า Editor ทับทั้งแอป (ไม่ให้เห็น bottom bar)
                                                 Navigator.of(
@@ -341,10 +401,12 @@ class _StaffBookingScreenPageState extends State<StaffBookingScreen>
                                                   rootNavigator: true,
                                                 ).push(
                                                   MaterialPageRoute(
-                                                    builder: (_) => FloorEditorScreen(
-                                                      // ถ้า FloorEditorScreen รับพารามิเตอร์ ให้ส่งไปด้วย
-                                                      // เช่น: floor: floor, initialX: x, initialY: y,
-                                                    ),
+                                                    builder: (_) =>
+                                                        FloorEditorScreen(
+                                                          initialFloor: floor,
+                                                          initialSlotId:
+                                                              _selectedSlotId,
+                                                        ),
                                                   ),
                                                 );
                                               },

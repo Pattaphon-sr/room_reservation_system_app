@@ -1046,7 +1046,7 @@ class _EditRulesScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Business Rules (Edit)')),
+      appBar: AppBar(title: const Text('Rules (Edit)')),
       body: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         itemCount: items.length,
