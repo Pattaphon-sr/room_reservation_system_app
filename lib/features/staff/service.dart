@@ -4,13 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/staff_history_screen.dart';
 
 class StaffHistoryService {
-  final String baseUrl = 'http://10.0.2.2:3000';
-  
+  final String baseUrl = 'http://192.168.1.6:3000';
+
   Future<List<ActivityItem>> fetchHistory() async {
     try {
       final token = await _getToken();
       print('Token: $token');
-      
+
       final response = await http.get(
         Uri.parse('$baseUrl/api/reservations/history'),
         headers: {
@@ -21,18 +21,18 @@ class StaffHistoryService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        
+
         // ✅ กรองเฉพาะ approved และ rejected (ไม่เอา pending)
         final filteredData = data.where((json) {
           final status = json['status']?.toString().toLowerCase();
-          return status == 'approved' || 
-                 status == 'rejected' ||
-                 status == 'reserved'; // เพิ่ม reserved (ถ้า backend ใช้คำนี้)
+          return status == 'approved' ||
+              status == 'rejected' ||
+              status == 'reserved'; // เพิ่ม reserved (ถ้า backend ใช้คำนี้)
         }).toList();
-        
+
         print('📋 Total items: ${data.length}');
         print('✅ Filtered items: ${filteredData.length}');
-        
+
         return filteredData.map((json) => _parseActivityItem(json)).toList();
       } else {
         throw Exception('Failed to load history: ${response.statusCode}');

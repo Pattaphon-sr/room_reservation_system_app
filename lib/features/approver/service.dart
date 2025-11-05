@@ -37,51 +37,51 @@ class PendingReservation {
 }
 
 class ApproverHistoryService {
-  final String baseUrl = 'http://10.0.2.2:3000';
+  final String baseUrl = 'http://192.168.1.6:3000';
 
   // ==================== HISTORY ====================
-  
+
   /// ดึงประวัติการพิจารณาของ Approver (กรองเฉพาะที่ตัวเองอนุมัติ/ปฏิเสธ)
-Future<List<ApproverHistoryItem>> fetchHistory() async {
-  try {
-    final response = await http.get(
-      Uri.parse('$baseUrl/api/reservations/history'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    ).timeout(const Duration(seconds: 10));
+  Future<List<ApproverHistoryItem>> fetchHistory() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/api/reservations/history'),
+            headers: {'Content-Type': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 10));
 
-    print('📡 Response Status: ${response.statusCode}');
-    print('📦 Response Body: ${response.body}');
+      print('📡 Response Status: ${response.statusCode}');
+      print('📦 Response Body: ${response.body}');
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      print('📋 Total items: ${data.length}');
-      
-      // ✅ แสดง approved_by ทั้งหมด
-      for (var item in data) {
-        print('👤 approved_by: ${item['approved_by']}');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        print('📋 Total items: ${data.length}');
+
+        // ✅ แสดง approved_by ทั้งหมด
+        for (var item in data) {
+          print('👤 approved_by: ${item['approved_by']}');
+        }
+
+        const String currentApproverId = 'AdPingPong';
+
+        final filtered = data
+            .where((json) => json['approved_by'] == currentApproverId)
+            .toList();
+        print('✅ Filtered items: ${filtered.length}');
+
+        return filtered.map((json) => _parseApproverItem(json)).toList();
+      } else {
+        throw Exception('Failed to load history: ${response.statusCode}');
       }
-      
-      const String currentApproverId = 'AdPingPong';
-      
-      final filtered = data
-          .where((json) => json['approved_by'] == currentApproverId)
-          .toList();
-      print('✅ Filtered items: ${filtered.length}');
-      
-      return filtered.map((json) => _parseApproverItem(json)).toList();
-    } else {
-      throw Exception('Failed to load history: ${response.statusCode}');
+    } on TimeoutException {
+      throw Exception('Connection timeout - check your backend');
+    } catch (e) {
+      throw Exception('Network error: $e');
     }
-  } on TimeoutException {
-    throw Exception('Connection timeout - check your backend');
-  } catch (e) {
-    throw Exception('Network error: $e');
   }
-}
 
-ApproverHistoryItem _parseApproverItem(Map<String, dynamic> json) {
+  ApproverHistoryItem _parseApproverItem(Map<String, dynamic> json) {
     return ApproverHistoryItem(
       dateTime: DateTime.parse(json['date_time']),
       status: _parseStatus(json['status']),
@@ -111,20 +111,22 @@ ApproverHistoryItem _parseApproverItem(Map<String, dynamic> json) {
   /// 1️⃣ ดึงคำขอจองทั้งหมดที่รอพิจารณา
   Future<List<PendingReservation>> fetchPendingReservations() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/reservations'),
-        headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer $token', // เพิ่มเมื่อมี Login
-        },
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse('$baseUrl/reservations'),
+            headers: {
+              'Content-Type': 'application/json',
+              // 'Authorization': 'Bearer $token', // เพิ่มเมื่อมี Login
+            },
+          )
+          .timeout(const Duration(seconds: 10));
 
       print('📡 GET /reservations - Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         print('📋 Pending reservations: ${data.length}');
-        
+
         return data.map((json) => PendingReservation.fromJson(json)).toList();
       } else {
         throw Exception('Failed to load reservations: ${response.statusCode}');
@@ -139,18 +141,20 @@ ApproverHistoryItem _parseApproverItem(Map<String, dynamic> json) {
   /// 2️⃣ อนุมัติคำขอจอง
   Future<void> approveReservation(int id, {String? remark}) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/reservations/$id/approve'),
-        headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer $token', // เพิ่มเมื่อมี Login
-        },
-        body: json.encode({
-          if (remark != null) 'remark': remark,
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/reservations/$id/approve'),
+            headers: {
+              'Content-Type': 'application/json',
+              // 'Authorization': 'Bearer $token', // เพิ่มเมื่อมี Login
+            },
+            body: json.encode({if (remark != null) 'remark': remark}),
+          )
+          .timeout(const Duration(seconds: 10));
 
-      print('📡 PUT /reservations/$id/approve - Status: ${response.statusCode}');
+      print(
+        '📡 PUT /reservations/$id/approve - Status: ${response.statusCode}',
+      );
 
       if (response.statusCode == 200) {
         print('✅ Approved reservation #$id');
@@ -167,16 +171,18 @@ ApproverHistoryItem _parseApproverItem(Map<String, dynamic> json) {
   /// 3️⃣ ปฏิเสธคำขอจอง
   Future<void> rejectReservation(int id, {required String remark}) async {
     try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/reservations/$id/reject'),
-        headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer $token', // เพิ่มเมื่อมี Login
-        },
-        body: json.encode({
-          'remark': remark, // ✅ บังคับต้องระบุเหตุผล
-        }),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .put(
+            Uri.parse('$baseUrl/reservations/$id/reject'),
+            headers: {
+              'Content-Type': 'application/json',
+              // 'Authorization': 'Bearer $token', // เพิ่มเมื่อมี Login
+            },
+            body: json.encode({
+              'remark': remark, // ✅ บังคับต้องระบุเหตุผล
+            }),
+          )
+          .timeout(const Duration(seconds: 10));
 
       print('📡 PUT /reservations/$id/reject - Status: ${response.statusCode}');
 

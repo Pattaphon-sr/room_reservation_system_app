@@ -4,17 +4,19 @@ import 'package:http/http.dart' as http;
 import 'package:room_reservation_system_app/features/user/screens/user_history_screen.dart';
 
 class UserHistoryService {
-  final String baseUrl = 'http://10.0.2.2:3000';
+  final String baseUrl = 'http://192.168.1.6:3000';
 
   /// ดึงประวัติการจองของ User (กรองเฉพาะของตัวเอง)
   Future<List<ActivityItem>> fetchHistory() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/api/reservations/history'), // ✅ เปลี่ยนกลับเป็น /api/reservations/history
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .get(
+            Uri.parse(
+              '$baseUrl/api/reservations/history',
+            ), // ✅ เปลี่ยนกลับเป็น /api/reservations/history
+            headers: {'Content-Type': 'application/json'},
+          )
+          .timeout(const Duration(seconds: 10));
 
       print('📡 Response Status: ${response.statusCode}');
       print('📦 Response Body: ${response.body}');
@@ -22,19 +24,24 @@ class UserHistoryService {
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         print('📋 Total items: ${data.length}');
-        
+
         // ✅ แสดง requested_by ทั้งหมด
         for (var item in data) {
-          print('👤 requested_by: ${item['requested_by']} | status: ${item['status']} | date: ${item['date_time']}');
+          print(
+            '👤 requested_by: ${item['requested_by']} | status: ${item['status']} | date: ${item['date_time']}',
+          );
         }
-        
-        const String currentUserId = 'Lisa'; // ✅ เปลี่ยนเป็น '1' เพราะ Database ใช้ ID
-        
+
+        const String currentUserId =
+            'Lisa'; // ✅ เปลี่ยนเป็น '1' เพราะ Database ใช้ ID
+
         final filtered = data
-            .where((json) => json['requested_by'].toString() == currentUserId) // ✅ แปลงเป็น string
+            .where(
+              (json) => json['requested_by'].toString() == currentUserId,
+            ) // ✅ แปลงเป็น string
             .toList();
         print('✅ Filtered items: ${filtered.length}');
-        
+
         return filtered.map((json) => _parseActivityItem(json)).toList();
       } else {
         throw Exception('Failed to load history: ${response.statusCode}');
