@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
+import 'package:room_reservation_system_app/features/staff/service.dart'; // ไม่มี lib/
 
 /// --------------------- MODEL ---------------------
 enum ApprovalStatus { pending, approved, rejected }
@@ -42,113 +43,157 @@ class StaffHistoryScreen extends StatefulWidget {
 
 class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
   final TextEditingController _search = TextEditingController();
+  final StaffHistoryService _service = StaffHistoryService(); // เพิ่มบรรทัดนี้
 
-  /// Mock data (เห็นทุกคน ทั้ง Pending/Done) + ตัวอย่าง Sep 2025
-  final List<ActivityItem> _items = [
-    // Pending (Oct)
-    ActivityItem(
-      status: ApprovalStatus.pending,
-      floor: 'Floor5',
-      roomCode: 'R501',
-      slot: '08:00-10:00',
-      dateTime: DateTime(2025, 10, 22, 7, 48),
-      requestedBy: 'Mr. Adam',
-    ),
-    ActivityItem(
-      status: ApprovalStatus.pending,
-      floor: 'Floor4',
-      roomCode: 'R402',
-      slot: '10:00-12:00',
-      dateTime: DateTime(2025, 10, 21, 9, 20),
-      requestedBy: 'Ms. Bella',
-    ),
-    ActivityItem(
-      status: ApprovalStatus.pending,
-      floor: 'Floor3',
-      roomCode: 'R303',
-      slot: '13:00-15:00',
-      dateTime: DateTime(2025, 10, 20, 14, 10),
-      requestedBy: 'Dr. Chan',
-    ),
+  List<ActivityItem> connectedApiItems = [];
+  bool _isLoading = true; // เพิ่มบรรทัดนี้
+  String? _errorMessage; // เพิ่มบรรทัดนี้
 
-    // Done (Oct)
-    ActivityItem(
-      status: ApprovalStatus.approved,
-      floor: 'Floor5',
-      roomCode: 'R501',
-      slot: '08:00-10:00',
-      dateTime: DateTime(2025, 10, 19, 7, 56),
-      requestedBy: 'Mr. David',
-      approvedBy: 'Dr. Parker',
-    ),
-    ActivityItem(
-      status: ApprovalStatus.approved,
-      floor: 'Floor5',
-      roomCode: 'R503',
-      slot: '08:00-10:00',
-      dateTime: DateTime(2025, 10, 18, 8, 10),
-      requestedBy: 'Ms. Eva',
-      approvedBy: 'Assoc. Prof. Somchai',
-    ),
-    ActivityItem(
-      status: ApprovalStatus.rejected,
-      floor: 'Floor3',
-      roomCode: 'R304',
-      slot: '10:00-12:00',
-      dateTime: DateTime(2025, 10, 17, 10, 48),
-      requestedBy: 'Mr. Ford',
-      approvedBy: 'Dr. Jane',
-      note: 'The ceiling collapsed',
-    ),
-    ActivityItem(
-      status: ApprovalStatus.approved,
-      floor: 'Floor4',
-      roomCode: 'R405',
-      slot: '09:00-11:00',
-      dateTime: DateTime(2025, 10, 16, 9, 12),
-      requestedBy: 'Dr. Grace',
-      approvedBy: 'Dean Kitti',
-    ),
-    ActivityItem(
-      status: ApprovalStatus.approved,
-      floor: 'Floor3',
-      roomCode: 'R302',
-      slot: '13:00-15:00',
-      dateTime: DateTime(2025, 10, 15, 13, 45),
-      requestedBy: 'Mr. Henry',
-      approvedBy: 'Dr. Mia',
-    ),
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory(); // เพิ่มบรรทัดนี้
+  }
 
-    // Done (Sep)
-    ActivityItem(
-      status: ApprovalStatus.approved,
-      floor: 'Floor5',
-      roomCode: 'R501',
-      slot: '08:00-10:00',
-      dateTime: DateTime(2025, 9, 27, 7, 39),
-      requestedBy: 'Mr. Leo',
-      approvedBy: 'Dr. Mia',
-    ),
-    ActivityItem(
-      status: ApprovalStatus.approved,
-      floor: 'Floor4',
-      roomCode: 'R408',
-      slot: '10:00-12:00',
-      dateTime: DateTime(2025, 9, 13, 10, 48),
-      requestedBy: 'Ms. Nora',
-      approvedBy: 'Dr. Parker',
-    ),
-    ActivityItem(
-      status: ApprovalStatus.rejected,
-      floor: 'Floor3',
-      roomCode: 'R307',
-      slot: '09:00-11:00',
-      dateTime: DateTime(2025, 9, 5, 9, 12),
-      requestedBy: 'Mr. Omar',
-      approvedBy: 'Assoc. Prof. Somchai',
-      note: 'Room under maintenance',
-    ),
-  ];
+  // เพิ่ม method นี้
+  Future<void> _loadHistory() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final items = await _service.fetchHistory();
+      setState(() {
+        connectedApiItems = items;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Mock data (เห็นทุกคน ทั้ง Pending/Done)
+  // final List<ActivityItem> _items = [
+  //   // Pending (Oct)
+  //   ActivityItem(
+  //     status: ApprovalStatus.pending,
+  //     floor: 'Floor5',
+  //     roomCode: 'R501',
+  //     slot: '08:00-10:00',
+  //     dateTime: DateTime(2025, 10, 22, 7, 48),
+  //     requestedBy: 'Mr. Adam',
+  //   ),
+  //   ActivityItem(
+  //     status: ApprovalStatus.pending,
+  //     floor: 'Floor4',
+  //     roomCode: 'R402',
+  //     slot: '10:00-12:00',
+  //     dateTime: DateTime(2025, 10, 21, 9, 20),
+  //     requestedBy: 'Ms. Bella',
+  //   ),
+  //   ActivityItem(
+  //     status: ApprovalStatus.pending,
+  //     floor: 'Floor3',
+  //     roomCode: 'R303',
+  //     slot: '13:00-15:00',
+  //     dateTime: DateTime(2025, 10, 20, 14, 10),
+  //     requestedBy: 'Dr. Chan',
+  //   ),
+
+  //   // Done (Oct)
+  //   ActivityItem(
+  //     status: ApprovalStatus.approved,
+  //     floor: 'Floor5',
+  //     roomCode: 'R501',
+  //     slot: '08:00-10:00',
+  //     dateTime: DateTime(2025, 10, 19, 7, 56),
+  //     requestedBy: 'Mr. David',
+  //     approvedBy: 'Dr. Parker',
+  //   ),
+  //   ActivityItem(
+  //     status: ApprovalStatus.approved,
+  //     floor: 'Floor5',
+  //     roomCode: 'R503',
+  //     slot: '08:00-10:00',
+  //     dateTime: DateTime(2025, 10, 18, 8, 10),
+  //     requestedBy: 'Ms. Eva',
+  //     approvedBy: 'Assoc. Prof. Somchai',
+  //   ),
+  //   ActivityItem(
+  //     status: ApprovalStatus.rejected,
+  //     floor: 'Floor3',
+  //     roomCode: 'R304',
+  //     slot: '10:00-12:00',
+  //     dateTime: DateTime(2025, 10, 17, 10, 48),
+  //     requestedBy: 'Mr. Ford',
+  //     approvedBy: 'Dr. Jane',
+  //     note: 'The ceiling collapsed',
+  //   ),
+  //   ActivityItem(
+  //     status: ApprovalStatus.approved,
+  //     floor: 'Floor4',
+  //     roomCode: 'R405',
+  //     slot: '09:00-11:00',
+  //     dateTime: DateTime(2025, 10, 16, 9, 12),
+  //     requestedBy: 'Dr. Grace',
+  //     approvedBy: 'Dean Kitti',
+  //   ),
+  //   ActivityItem(
+  //     status: ApprovalStatus.approved,
+  //     floor: 'Floor3',
+  //     roomCode: 'R302',
+  //     slot: '13:00-15:00',
+  //     dateTime: DateTime(2025, 10, 15, 13, 45),
+  //     requestedBy: 'Mr. Henry',
+  //     approvedBy: 'Dr. Mia',
+  //   ),
+
+  //   // Done (Sep)
+  //   ActivityItem(
+  //     status: ApprovalStatus.approved,
+  //     floor: 'Floor5',
+  //     roomCode: 'R501',
+  //     slot: '08:00-10:00',
+  //     dateTime: DateTime(2025, 9, 27, 7, 39),
+  //     requestedBy: 'Mr. Leo',
+  //     approvedBy: 'Dr. Mia',
+  //   ),
+  //   ActivityItem(
+  //     status: ApprovalStatus.approved,
+  //     floor: 'Floor4',
+  //     roomCode: 'R408',
+  //     slot: '10:00-12:00',
+  //     dateTime: DateTime(2025, 9, 13, 10, 48),
+  //     requestedBy: 'Ms. Nora',
+  //     approvedBy: 'Dr. Parker',
+  //   ),
+  //   ActivityItem(
+  //     status: ApprovalStatus.rejected,
+  //     floor: 'Floor3',
+  //     roomCode: 'R307',
+  //     slot: '09:00-11:00',
+  //     dateTime: DateTime(2025, 9, 5, 9, 12),
+  //     requestedBy: 'Mr. Omar',
+  //     approvedBy: 'Assoc. Prof. Somchai',
+  //     note: 'Room under maintenance',
+  //   ),
+
+  //   // ตัวอย่าง (Nov) — เผื่อให้เห็นแท็บต่อไปทางขวา
+  //   ActivityItem(
+  //     status: ApprovalStatus.pending,
+  //     floor: 'Floor3',
+  //     roomCode: 'R301',
+  //     slot: '09:00-11:00',
+  //     dateTime: DateTime(2025, 11, 5, 9, 15),
+  //     requestedBy: 'Ms. Pam',
+  //   ),
+  // ];
+
+  // final List<ActivityItem> connectedApiItems = [];
 
   /// ---------- Helpers: สำหรับ grouping เดือน ----------
   String _monthYearLabel(DateTime dt) {
@@ -169,7 +214,8 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
     return '${months[dt.month - 1]} ${dt.year}';
   }
 
-  List<MapEntry<String, List<ActivityItem>>> _groupByMonth(
+  /// กลุ่มเดือน: เก่า → ใหม่ (ใช้เฉพาะสำหรับ "แท็บ" ให้ Sep อยู่ซ้าย, Oct ขวา)
+  List<MapEntry<String, List<ActivityItem>>> _groupByMonthAsc(
     List<ActivityItem> items,
   ) {
     final map = <String, List<ActivityItem>>{};
@@ -178,61 +224,86 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
           '${e.dateTime.year}-${e.dateTime.month.toString().padLeft(2, '0')}';
       map.putIfAbsent(key, () => []).add(e);
     }
-    // sort ในกลุ่ม: ใหม่ → เก่า
     for (final list in map.values) {
-      list.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+      list.sort(
+        (a, b) => b.dateTime.compareTo(a.dateTime),
+      ); // ในเดือน: ใหม่ → เก่า
     }
-    // sort กลุ่ม: ใหม่ → เก่า
     final entries = map.entries.toList()
-      ..sort((a, b) => b.key.compareTo(a.key));
+      ..sort((a, b) => a.key.compareTo(b.key)); // เดือน: เก่า → ใหม่
     return entries;
   }
 
-  /// บล็อกรายเดือนแบบเดียวกับฝั่ง User (ใช้ได้ทั้ง Pending/Done)
-  List<Widget> _buildSectionByMonth({
-    required String sectionTitle,
-    required List<ActivityItem> items,
-    Color? titleColor,
-  }) {
-    const monthTopGap = 24.0;
-    const monthBottomGap = 12.0;
+  /// เนื้อหาใน "หนึ่งแท็บของเดือน" (ไม่ต้องมีหัวเดือนซ้ำ)
+  List<Widget> _buildOneMonthTabBody(List<ActivityItem> monthItems) {
+    final done =
+        monthItems.where((e) => e.status != ApprovalStatus.pending).toList()
+          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
 
-    final out = <Widget>[
-      _SectionHeader(title: sectionTitle, color: titleColor),
-      const SizedBox(height: 10),
+    return [
+      // const SizedBox(height: 24),
+      // // const Divider(height: 0, thickness: 0.8, color: Color(0xFFE1E6EB)),
+      // const SizedBox(height: 18),
+
+      // _SectionHeader(title: 'Done'),
+      // const SizedBox(height: 10),
+
+      // ✅ แก้ตรงนี้ - เพิ่ม else
+      if (done.isNotEmpty) ..._tilesWithDividers(done, isStaff: true),
+
+      const SizedBox(height: 12),
     ];
-
-    if (items.isEmpty) {
-      out.add(const _Empty(text: 'No data'));
-      return out;
-    }
-
-    final groups = _groupByMonth(items);
-    for (var gi = 0; gi < groups.length; gi++) {
-      final g = groups[gi];
-
-      if (gi > 0) {
-        // เว้นระยะก่อนเดือนใหม่
-        out.add(const SizedBox(height: monthTopGap));
-        // out.add(const Divider(height: 0, thickness: 0.8, color: Color(0xFFE1E6EB)));
-        out.add(const SizedBox(height: 3));
-      }
-
-      out.add(_MonthLabel(text: _monthYearLabel(g.value.first.dateTime)));
-      out.add(const SizedBox(height: 8));
-      out.addAll(_tilesWithDividers(g.value, isStaff: true));
-      out.add(const SizedBox(height: monthBottomGap));
-    }
-
-    return out;
   }
 
   @override
   Widget build(BuildContext context) {
+    // เพิ่มการตรวจสอบ loading และ error ที่ต้นฟังก์ชัน
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF121212),
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF121212),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white, size: 64),
+                const SizedBox(height: 16),
+                Text(
+                  'Error: $_errorMessage',
+                  style: const TextStyle(color: Colors.white),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _loadHistory,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final query = _search.text.trim().toLowerCase();
 
     // ค้นหาในทุกฟิลด์ที่เกี่ยวข้อง
-    final filtered = _items.where((e) {
+    final filtered = connectedApiItems.where((e) {
       if (query.isEmpty) return true;
       final hay =
           '${e.floor} ${e.roomCode} ${e.slot} ${e.requestedBy} '
@@ -241,136 +312,184 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
       return hay.contains(query);
     }).toList();
 
-    final pending =
-        filtered.where((e) => e.status == ApprovalStatus.pending).toList()
-          ..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // ใหม่ → เก่า
-    final done =
-        filtered.where((e) => e.status != ApprovalStatus.pending).toList()
-          ..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // ใหม่ → เก่า
+    // กลุ่มเดือนสำหรับ “แท็บ” — เก่า → ใหม่ (เช่น Sep | Oct | Nov)
+    final tabGroups = _groupByMonthAsc(filtered);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: AppColors.primaryGradient5C,
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          stops: AppColorStops.primaryStop5C,
+    // ถ้าไม่มีข้อมูลเลย
+    if (tabGroups.isEmpty) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF121212),
+        body: Center(
+          child: Text('No data', style: TextStyle(color: Colors.white)),
         ),
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 32),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  'History',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 35,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF121212),
+      body: Stack(
+        children: [
+          // พื้นหลัง gradient หลัก
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: AppColors.primaryGradient5C,
               ),
-              const SizedBox(height: 30),
-
-              // Search (แก้วใส + เงาเรืองนิดๆ)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: AppColors.oceanDeep,
-                        blurRadius: 18,
-                        spreadRadius: -2,
-                        offset: Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _search,
-                    onChanged: (_) => setState(() {}),
-                    style: const TextStyle(color: Colors.white),
-                    cursorColor: Colors.white,
-                    decoration: InputDecoration(
-                      hintText: 'Search ...',
-                      hintStyle: const TextStyle(color: Colors.white70),
-                      prefixIcon: const Icon(Icons.search, color: Colors.white),
-                      filled: true,
-                      fillColor: const Color(0x334A74A8),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(28),
-                        borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.25),
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(28),
-                        borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.25),
-                        ),
-                      ),
-                      focusedBorder: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(28)),
-                        borderSide: BorderSide(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 34),
-
-              // ตัวการ์ดพื้นหลังอ่อน + เนื้อหา
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(26),
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 24,
-                        spreadRadius: -8,
-                        color: Colors.black26,
-                        offset: Offset(0, -6),
-                      ),
-                    ],
-                  ),
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                    children: [
-                      // ---------- PENDING: แสดงเป็นบล็อกรายเดือน ----------
-                      ..._buildSectionByMonth(
-                        sectionTitle: 'Pending Approval',
-                        items: pending,
-                        titleColor: AppColors.warning,
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // ---------- DONE: แสดงเป็นบล็อกรายเดือน ----------
-                      ..._buildSectionByMonth(
-                        sectionTitle: 'Done',
-                        items: done,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+
+          // เนื้อหา + TabBar
+          SafeArea(
+            child: DefaultTabController(
+              length: tabGroups.length,
+              // ถ้าอยากให้เริ่มที่แท็บล่าสุด ให้ใช้ initialIndex: tabGroups.length - 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 40),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Text(
+                      'History',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 35,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // Search
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: AppColors.oceanDeep,
+                            blurRadius: 18,
+                            spreadRadius: -2,
+                            offset: Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _search,
+                        onChanged: (_) => setState(() {}),
+                        style: const TextStyle(color: Colors.white),
+                        cursorColor: Colors.white,
+                        decoration: InputDecoration(
+                          hintText: 'Search ...',
+                          hintStyle: const TextStyle(color: Colors.white70),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Colors.white,
+                          ),
+                          filled: true,
+                          fillColor: const Color(0x334A74A8),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(28),
+                            borderSide: BorderSide(
+                              color: Colors.white.withOpacity(0.25),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(28),
+                            borderSide: BorderSide(
+                              color: Colors.white.withOpacity(0.25),
+                            ),
+                          ),
+                          focusedBorder: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(28)),
+                            borderSide: BorderSide(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ===== TabBar ด้านบน (แบบเดียวกับ User) =====
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18.0),
+                    child: TabBar(
+                      isScrollable: true,
+                      labelPadding: const EdgeInsets.symmetric(
+                        horizontal: 14.0,
+                      ),
+                      indicatorColor: Colors.white,
+                      indicatorWeight: 2,
+                      labelColor: Colors.white,
+                      unselectedLabelColor: Colors.white70,
+                      labelStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                      ),
+                      tabs: [
+                        for (final g in tabGroups)
+                          Tab(text: _monthYearLabel(g.value.first.dateTime)),
+                      ],
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 18.0),
+                    child: Divider(
+                      height: 18,
+                      thickness: 1,
+                      color: Color(0x66FFFFFF),
+                    ),
+                  ),
+
+                  // ===== เนื้อหาในแต่ละแท็บ =====
+                  Expanded(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(26),
+                        ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            blurRadius: 24,
+                            spreadRadius: -8,
+                            color: Colors.black26,
+                            offset: Offset(0, -6),
+                          ),
+                        ],
+                      ),
+                      child: TabBarView(
+                        children: [
+                          for (final g in tabGroups)
+                            ListView(
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                20,
+                                20,
+                                28,
+                              ),
+                              children: _buildOneMonthTabBody(g.value),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -403,14 +522,15 @@ class _SectionHeader extends StatelessWidget {
     return Text(
       title,
       style: TextStyle(
-        color: color ?? Colors.black87,
-        fontSize: 20,
+        color: color ?? Colors.black,
+        fontSize: 28,
         fontWeight: FontWeight.w700,
       ),
     );
   }
 }
 
+// ignore: unused_element
 class _MonthLabel extends StatelessWidget {
   final String text;
   const _MonthLabel({required this.text});
@@ -419,8 +539,8 @@ class _MonthLabel extends StatelessWidget {
     return Text(
       text,
       style: const TextStyle(
-        color: Colors.black54,
-        fontSize: 19,
+        color: Color.fromARGB(255, 75, 77, 79),
+        fontSize: 18,
         fontWeight: FontWeight.w700,
       ),
     );
@@ -502,9 +622,11 @@ class _ActivityTileStaff extends StatelessWidget {
               Text(
                 item.roomCode,
                 style: TextStyle(
-                  color: item.status == ApprovalStatus.approved
-                      ? AppColors.success
-                      : Colors.black,
+                  color: item.status == ApprovalStatus.rejected
+                      ? const Color(0xFFE62727) // ✅ แดง (rejected)
+                      : item.status == ApprovalStatus.approved
+                      ? const Color(0xFF399918) // เขียว (approved)
+                      : Colors.black87, // ดำ (pending)
                   fontWeight: FontWeight.w800,
                   fontSize: 18,
                 ),

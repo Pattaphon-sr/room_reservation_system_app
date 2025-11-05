@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
+import 'package:room_reservation_system_app/features/approver/service.dart'; // ✅ เพิ่มบรรทัดนี้
 
 // --------------------- MODEL ---------------------
 enum DecisionStatus { approved, disapproved }
@@ -37,80 +38,125 @@ class ApproverHistoryScreen extends StatefulWidget {
 
 class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
   final TextEditingController _search = TextEditingController();
+  final ApproverHistoryService _service =
+      ApproverHistoryService(); // ✅ เพิ่ม service
 
-  // ---------- Mock data ----------
-  final List<ApproverHistoryItem> _items = [
-    // October 2025
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 10, 22, 8, 25),
-      status: DecisionStatus.approved,
-      floor: 'Floor5',
-      roomCode: 'R501',
-      slot: '08:00-10:00',
-      requesterName: 'Mr. Adam',
-    ),
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 10, 21, 10, 15),
-      status: DecisionStatus.disapproved,
-      floor: 'Floor4',
-      roomCode: 'R402',
-      slot: '10:00-12:00',
-      requesterName: 'Ms. Bella',
-      remark: 'The room is currently being renovated.',
-    ),
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 10, 19, 7, 56),
-      status: DecisionStatus.approved,
-      floor: 'Floor5',
-      roomCode: 'R503',
-      slot: '08:00-10:00',
-      requesterName: 'Mr. David',
-    ),
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 10, 18, 14, 10),
-      status: DecisionStatus.approved,
-      floor: 'Floor3',
-      roomCode: 'R305',
-      slot: '14:00-16:00',
-      requesterName: 'Dr. Grace',
-    ),
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 10, 17, 9, 20),
-      status: DecisionStatus.disapproved,
-      floor: 'Floor3',
-      roomCode: 'R304',
-      slot: '10:00-12:00',
-      requesterName: 'Mr. Ford',
-      remark: 'Power maintenance scheduled.',
-    ),
+  List<ApproverHistoryItem> _items = []; // ✅ เปลี่ยนจาก final เป็น var
+  bool _isLoading = true; // ✅ เพิ่ม loading state
+  String? _errorMessage; // ✅ เพิ่ม error state
 
-    // September 2025
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 9, 27, 7, 39),
-      status: DecisionStatus.approved,
-      floor: 'Floor5',
-      roomCode: 'R501',
-      slot: '08:00-10:00',
-      requesterName: 'Mr. Ken',
-    ),
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 9, 13, 10, 48),
-      status: DecisionStatus.approved,
-      floor: 'Floor4',
-      roomCode: 'R408',
-      slot: '10:00-12:00',
-      requesterName: 'Ms. Iris',
-    ),
-    ApproverHistoryItem(
-      dateTime: DateTime(2025, 9, 5, 9, 12),
-      status: DecisionStatus.disapproved,
-      floor: 'Floor4',
-      roomCode: 'R407',
-      slot: '09:00-11:00',
-      requesterName: 'Mr. John',
-      remark: 'Room under maintenance',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory(); // ✅ โหลดข้อมูลตอนเปิดหน้า
+  }
+
+  Future<void> _loadHistory() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final items = await _service.fetchHistory();
+      setState(() {
+        _items = items;
+        _isLoading = false;
+      });
+      print('✅ Loaded ${items.length} items');
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+      print('❌ Error: $e');
+    }
+  }
+  // // ---------- Mock data ----------
+  // final List<ApproverHistoryItem> _items = [
+  //   // October 2025
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 10, 22, 8, 25),
+  //     status: DecisionStatus.approved,
+  //     floor: 'Floor5',
+  //     roomCode: 'R501',
+  //     slot: '08:00-10:00',
+  //     requesterName: 'Mr. Adam',
+  //   ),
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 10, 21, 10, 15),
+  //     status: DecisionStatus.disapproved,
+  //     floor: 'Floor4',
+  //     roomCode: 'R402',
+  //     slot: '10:00-12:00',
+  //     requesterName: 'Ms. Bella',
+  //     remark: 'The room is currently being renovated.',
+  //   ),
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 10, 19, 7, 56),
+  //     status: DecisionStatus.approved,
+  //     floor: 'Floor5',
+  //     roomCode: 'R503',
+  //     slot: '08:00-10:00',
+  //     requesterName: 'Mr. David',
+  //   ),
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 10, 18, 14, 10),
+  //     status: DecisionStatus.approved,
+  //     floor: 'Floor3',
+  //     roomCode: 'R305',
+  //     slot: '14:00-16:00',
+  //     requesterName: 'Dr. Grace',
+  //   ),
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 10, 17, 9, 20),
+  //     status: DecisionStatus.disapproved,
+  //     floor: 'Floor3',
+  //     roomCode: 'R304',
+  //     slot: '10:00-12:00',
+  //     requesterName: 'Mr. Ford',
+  //     remark: 'Power maintenance scheduled.',
+  //   ),
+
+  //   // September 2025
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 9, 27, 7, 39),
+  //     status: DecisionStatus.approved,
+  //     floor: 'Floor5',
+  //     roomCode: 'R501',
+  //     slot: '08:00-10:00',
+  //     requesterName: 'Mr. Ken',
+  //   ),
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 9, 13, 10, 48),
+  //     status: DecisionStatus.approved,
+  //     floor: 'Floor4',
+  //     roomCode: 'R408',
+  //     slot: '10:00-12:00',
+  //     requesterName: 'Ms. Iris',
+  //   ),
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 9, 5, 9, 12),
+  //     status: DecisionStatus.disapproved,
+  //     floor: 'Floor4',
+  //     roomCode: 'R407',
+  //     slot: '09:00-11:00',
+  //     requesterName: 'Mr. John',
+  //     remark: 'Room under maintenance',
+  //   ),
+
+  //   // November 2025 (ไว้ให้เห็นแท็บทางขวา)
+  //   ApproverHistoryItem(
+  //     dateTime: DateTime(2025, 11, 5, 9, 15),
+  //     status: DecisionStatus.approved,
+  //     floor: 'Floor2',
+  //     roomCode: 'R201',
+  //     slot: '09:00-11:00',
+  //     requesterName: 'Ms. Pam',
+  //   ),
+  // ];
+
+  final List<ApproverHistoryItem> connected_api_items = [];
 
   // ===== Helpers: format =====
   String _formatDateOnly(DateTime dt) {
@@ -156,8 +202,10 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
     return '${m[dt.month - 1]} ${dt.year}';
   }
 
-  // Group by month-year (new → old)
-  List<MapEntry<String, List<ApproverHistoryItem>>> _groupByMonth(
+  // Group by month-year (new → old)  [ใช้กับบล็อกแบบรวม]
+
+  // Group by month-year (old → new) [ใช้ทำ TabBar ให้ Sep อยู่ซ้าย Oct อยู่ขวา]
+  List<MapEntry<String, List<ApproverHistoryItem>>> _groupByMonthAsc(
     List<ApproverHistoryItem> items,
   ) {
     final map = <String, List<ApproverHistoryItem>>{};
@@ -167,56 +215,63 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
       (map[key] ??= []).add(it);
     }
     for (final list in map.values) {
-      list.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+      list.sort(
+        (a, b) => b.dateTime.compareTo(a.dateTime),
+      ); // ในเดือน: ใหม่ → เก่า
     }
-    final keys = map.keys.toList()..sort((a, b) => b.compareTo(a));
+    final keys = map.keys.toList()
+      ..sort((a, b) => a.compareTo(b)); // เดือน: เก่า → ใหม่
     return [for (final k in keys) MapEntry(k, map[k]!)];
   }
 
-  List<Widget> _buildSectionByMonth({
-    required List<ApproverHistoryItem> items,
-  }) {
-    // ตั้งค่าช่องว่างที่นี่
-    const double monthTopGap = 28.0; // เพิ่ม/ลดช่องว่างก่อนเดือนใหม่
-    const double monthBottomGap = 16.0; // เพิ่ม/ลดช่องว่างหลังแต่ละเดือน
+  // บล็อกแบบรวมรายเดือน (ยังเก็บไว้ เผื่อใช้)
 
-    final children = <Widget>[];
-    final groups = _groupByMonth(items);
+  // เนื้อหา "หนึ่งแท็บของเดือน" (แยก Approved / Rejected)
+  List<Widget> _buildOneMonthTabBody(List<ApproverHistoryItem> monthItems) {
+    final approved =
+        monthItems.where((e) => e.status == DecisionStatus.approved).toList()
+          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    final rejected =
+        monthItems.where((e) => e.status == DecisionStatus.disapproved).toList()
+          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
 
-    for (var gi = 0; gi < groups.length; gi++) {
-      final g = groups[gi];
+    List<Widget> tiles(List<ApproverHistoryItem> list) => List<Widget>.generate(
+      list.isEmpty ? 1 : (list.length * 2 - 1),
+      (index) {
+        if (list.isEmpty) return SizedBox.shrink();
+        if (index.isOdd) {
+          return const Divider(
+            height: 22,
+            thickness: 0.9,
+            color: Color(0xFFE1E6EB),
+          );
+        }
+        final i = index ~/ 2;
+        return _ApproverTile(item: list[i]);
+      },
+    );
 
-      // ถ้าไม่ใช่เดือนแรก → เว้นระยะก่อนเดือนใหม่
-      if (gi > 0) {
-        children.add(SizedBox(height: monthTopGap));
+    return [
+      // const Text(
+      //   'Approved',
+      //   style: TextStyle(color: Colors.black54, fontSize: 17, fontWeight: FontWeight.w700),
+      // ),
+      const SizedBox(height: 10),
+      ...tiles(approved),
 
-        children.add(const SizedBox(height: 3));
-      }
+      // const SizedBox(height: 24),
+      // const Divider(height: 0, thickness: 0.8, color: Color(0xFFE1E6EB)),
+      // const SizedBox(height: 18),
 
-      // ชื่อเดือน
-      children.add(_MonthLabel(text: _monthYearLabel(g.value.first.dateTime)));
-      children.add(const SizedBox(height: 15));
+      // const Text(
+      //   'Rejected',
+      //   style: TextStyle(color: Colors.black54, fontSize: 17, fontWeight: FontWeight.w700),
+      // ),
+      const SizedBox(height: 5),
+      ...tiles(rejected),
 
-      // tile list + divider
-      children.addAll(
-        List<Widget>.generate(g.value.length * 2 - 1, (index) {
-          if (index.isOdd) {
-            return const Divider(
-              height: 22,
-              thickness: 0.9,
-              color: Color(0xFFE1E6EB),
-            );
-          }
-          final i = index ~/ 2;
-          return _ApproverTile(item: g.value[i]);
-        }),
-      );
-
-      // ✅ เว้นระยะหลังจบเดือน
-      children.add(SizedBox(height: monthBottomGap));
-    }
-
-    return children;
+      const SizedBox(height: 12),
+    ];
   }
 
   @override
@@ -233,122 +288,184 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
       return hay.contains(q);
     }).toList()..sort((a, b) => b.dateTime.compareTo(a.dateTime));
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: AppColors.primaryGradient5C,
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          stops: AppColorStops.primaryStop5C,
-        ),
-      ),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 32),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  'History',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 35,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
+    // กลุ่มสำหรับแท็บ (เก่า → ใหม่)
+    final tabGroups = _groupByMonthAsc(filtered);
 
-              // Search
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: AppColors.oceanDeep,
-                        blurRadius: 18,
-                        spreadRadius: -2,
-                        offset: Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _search,
-                    onChanged: (_) => setState(() {}),
-                    style: const TextStyle(color: Colors.white),
-                    cursorColor: Colors.white,
-                    decoration: InputDecoration(
-                      hintText: 'Search ...',
-                      hintStyle: const TextStyle(color: Colors.white70),
-                      prefixIcon: const Icon(Icons.search, color: Colors.white),
-                      filled: true,
-                      fillColor: const Color(0x334A74A8),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(28),
-                        borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.25),
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(28),
-                        borderSide: BorderSide(
-                          color: Colors.white.withOpacity(0.25),
-                        ),
-                      ),
-                      focusedBorder: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(28)),
-                        borderSide: BorderSide(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
+    return Scaffold(
+      backgroundColor: const Color(0xFF121212),
+      body: Stack(
+        children: [
+          // Gradient พื้นหลังจาก theme
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: AppColors.primaryGradient5C,
+                stops: AppColorStops.primaryStop5C,
               ),
-
-              const SizedBox(height: 34),
-
-              // Card พื้นหลังสีอ่อน
-              Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(26),
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        blurRadius: 24,
-                        spreadRadius: -8,
-                        color: Colors.black26,
-                        offset: Offset(0, -6),
-                      ),
-                    ],
-                  ),
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                    children: _buildSectionByMonth(items: filtered),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          SafeArea(
+            child: DefaultTabController(
+              length: tabGroups.length,
+              // ถ้าอยากเริ่มที่เดือนล่าสุด ให้ใช้ initialIndex: tabGroups.length - 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 40),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Text(
+                      'History',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 35,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // Search
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: AppColors.oceanDeep,
+                            blurRadius: 18,
+                            spreadRadius: -2,
+                            offset: Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _search,
+                        onChanged: (_) => setState(() {}),
+                        style: const TextStyle(color: Colors.white),
+                        cursorColor: Colors.white,
+                        decoration: InputDecoration(
+                          hintText: 'Search ...',
+                          hintStyle: const TextStyle(color: Colors.white70),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Colors.white,
+                          ),
+                          filled: true,
+                          fillColor: const Color(0x334A74A8),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(28),
+                            borderSide: BorderSide(
+                              color: Colors.white.withOpacity(0.25),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(28),
+                            borderSide: BorderSide(
+                              color: Colors.white.withOpacity(0.25),
+                            ),
+                          ),
+                          focusedBorder: const OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(28)),
+                            borderSide: BorderSide(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // ===== TabBar =====
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18.0),
+                    child: TabBar(
+                      isScrollable: true,
+                      labelPadding: const EdgeInsets.symmetric(
+                        horizontal: 14.0,
+                      ),
+                      indicatorColor: Colors.white,
+                      indicatorWeight: 2,
+                      labelColor: Colors.white,
+                      unselectedLabelColor: Colors.white70,
+                      labelStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                      ),
+                      tabs: [
+                        for (final g in tabGroups)
+                          Tab(text: _monthYearLabel(g.value.first.dateTime)),
+                      ],
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 18.0),
+                    child: Divider(
+                      height: 18,
+                      thickness: 1,
+                      color: Color(0x66FFFFFF),
+                    ),
+                  ),
+
+                  // ===== เนื้อหาในแต่ละแท็บ =====
+                  Expanded(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(26),
+                        ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color.fromARGB(255, 255, 255, 255),
+                            Color.fromARGB(255, 255, 255, 255),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            blurRadius: 24,
+                            spreadRadius: -8,
+                            color: Colors.black26,
+                            offset: Offset(0, -6),
+                          ),
+                        ],
+                      ),
+                      child: TabBarView(
+                        children: [
+                          for (final g in tabGroups)
+                            ListView(
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                20,
+                                20,
+                                28,
+                              ),
+                              children: _buildOneMonthTabBody(g.value),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 // --------------------- SMALL WIDGETS ---------------------
+// ignore: unused_element
 class _MonthLabel extends StatelessWidget {
   final String text;
   const _MonthLabel({required this.text});
@@ -392,14 +509,13 @@ class _ApproverTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateStr = _formatDateOnly(item.dateTime);
-    final timeStr = _formatTimeOnly(item.dateTime);
+    _formatTimeOnly(item.dateTime);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 6),
 
-        // แถวสถานะ + Floor | Room code (ขวา)
         Row(
           children: [
             Text(
@@ -433,11 +549,10 @@ class _ApproverTile extends StatelessWidget {
           ],
         ),
 
-        // >>> Remark: ให้เหมือนฝั่ง User (อยู่ใต้สถานะ) <<<
         if (item.status == DecisionStatus.disapproved) ...[
           const SizedBox(height: 6),
           Text(
-            item.remark!, // ปลอดภัยเพราะบังคับด้วย assert แล้ว
+            item.remark!, // รับรองไม่ null จาก assert
             style: const TextStyle(
               color: Color(0xFFE62727),
               fontWeight: FontWeight.w700,
@@ -448,7 +563,6 @@ class _ApproverTile extends StatelessWidget {
 
         const SizedBox(height: 6),
 
-        // Slot | เวลา
         Row(
           children: [
             RichText(
@@ -485,20 +599,16 @@ class _ApproverTile extends StatelessWidget {
 
         const SizedBox(height: 6),
 
-        // ผู้ร้องขอ
         Row(
           children: [
-            RichText(
-              text: const TextSpan(
-                text: 'Requested by: ',
-                style: TextStyle(
-                  color: Color.fromARGB(255, 0, 0, 0),
-                  fontWeight: FontWeight.w500,
-                  fontSize: 15,
-                ),
+            const Text(
+              'Requested by: ',
+              style: TextStyle(
+                color: Color.fromARGB(255, 0, 0, 0),
+                fontWeight: FontWeight.w500,
+                fontSize: 15,
               ),
             ),
-
             Text(
               item.requesterName,
               style: const TextStyle(
