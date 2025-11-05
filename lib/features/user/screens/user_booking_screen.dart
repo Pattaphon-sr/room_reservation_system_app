@@ -2,6 +2,9 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+
+import 'package:dio/dio.dart';
+
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/shared/widgets/maps/map_types.dart';
@@ -346,6 +349,8 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
     final String byUser = _currentUsername;
     final String slotLabel = _labelOf(_selectedSlotId);
 
+    print(cell);
+
     await showAirDialog(
       context,
       height: 400,
@@ -381,6 +386,7 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
                       roomNo: roomNo,
                       slot: slotLabel,
                       user: byUser,
+                      cell: cell,
                     );
                     await Future.delayed(const Duration(milliseconds: 120));
                     await _showResultPopup(ok: ok);
@@ -405,9 +411,28 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
     required String roomNo,
     required String slot,
     required String user,
+    required Map<String, dynamic> cell, ////// <<<<< HERE
   }) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    return Random().nextDouble() < 0.6;
+    try {
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: "http://172.25.21.93:3000", ////// <<<<< ถ้า emulator
+          headers: {"Content-Type": "application/json"},
+        ),
+      );
+
+      final cellId = cell['id']; ////// <<<<< ดึง id จาก cell
+
+      final res = await dio.post(
+        "/api/reservations/request",
+        data: {"cell_id": 1, "slot_id": 'S1', "requested_by": 2},
+      );
+
+      return res.statusCode == 200;
+    } catch (err) {
+      print("DIO ERROR => $err");
+      return false;
+    }
   }
 
   Future<void> _showResultPopup({required bool ok}) async {
