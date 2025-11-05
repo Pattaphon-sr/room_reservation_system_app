@@ -4,6 +4,7 @@ import 'package:room_reservation_system_app/core/theme/theme.dart';
 import 'package:room_reservation_system_app/features/approver/root.dart';
 import 'package:room_reservation_system_app/features/staff/root.dart';
 import 'package:room_reservation_system_app/features/user/root.dart';
+// ตรวจสอบว่า path ไปยัง AuthService ถูกต้อง
 import 'package:room_reservation_system_app/services/auth_service.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/features/auth/auth.dart';
@@ -38,7 +39,18 @@ class _SignInScreenState extends State<SignInScreen> {
     setState(() => loading = false);
 
     if (role == null) {
+      // --- เพิ่มส่วนนี้ ---
+      // ถ้า role เป็น null (ล็อกอินไม่สำเร็จ) ให้แสดง SnackBar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login failed. Please check your email or password.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
+      // -----------------
     }
 
     Widget dest;
@@ -152,7 +164,9 @@ class _SignInScreenState extends State<SignInScreen> {
                               controller: passCtrl,
                               keyboardType: TextInputType.visiblePassword,
                               obscureText: _obscure,
-                              textInputAction: TextInputAction.next,
+                              textInputAction: TextInputAction.done, // เปลี่ยนเป็น done
+                              onSubmitted: (_) =>
+                                  _doLogin(), // กด enter แล้ว login เลย
                               decoration: InputDecoration(
                                 labelStyle: TextStyle(
                                   fontWeight: FontWeight.w500,

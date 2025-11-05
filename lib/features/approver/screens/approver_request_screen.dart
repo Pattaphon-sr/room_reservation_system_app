@@ -1,8 +1,8 @@
-// ⭐️ 1. IMPORT
-import 'package:shared_preferences/shared_preferences.dart';
+// 1. IMPORTs ที่จำเป็น (สำหรับ API, Date Formatting, และ AuthService)
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:room_reservation_system_app/services/auth_service.dart';
 // ------------------------------
 
 import 'package:flutter/material.dart';
@@ -19,92 +19,97 @@ class ApproverRequestScreen extends StatefulWidget {
 class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
   final TextEditingController _search = TextEditingController();
 
-  final String _baseUrl = 'http://localhost:3000/api'; 
+  // 2. กำหนดค่า API
+  // ⚠️ ต้องตรงกับที่ AuthService ใช้ (10.0.2.2 คือ localhost สำหรับ Android)
+  final String _apiBaseUrl = 'http://localhost:3000/api'; 
+  
+  // 3. ปรับปรุง STATE
+  String? _token; // ตัวแปรสำหรับเก็บ Token ที่ "อ่าน" มาได้
+  bool _isLoading = true; // เริ่มต้นที่ "กำลังโหลด"
+  List<Map<String, dynamic>> _requests = []; // รายการคำขอจาก Database
 
-  // ⭐️ 2. เอา Token ที่ Hardcode ออก
-  // final String _token = 'YOUR_APPROVER_TOKEN_HERE'; // ⬅️ ลบทิ้ง
-  String? _token; // ⬅️ เปลี่ยนเป็นตัวแปร State (Nullable)
-
+  // Helper สำหรับสร้าง Headers (จะใช้ _token จาก State)
   Map<String, String> get _authHeaders => {
-    // ⭐️ 3. Header จะดึง Token จาก State
-    'Authorization': 'Bearer $_token', 
+    'Authorization': 'Bearer $_token',
     'Content-Type': 'application/json',
   };
 
-  bool _isLoading = true;
-  List<Map<String, dynamic>> _requests = []; 
-
+  // 4. [AUTO-LOAD]
   @override
   void initState() {
     super.initState();
-    // ⭐️ 4. เปลี่ยนฟังก์ชันที่เรียกตอนเริ่ม
-    // _fetchReservations(); // ⬅️ ไม่เรียกอันนี้ตรงๆ แล้ว
-    _loadTokenAndFetchData(); // ⬅️ เรียกฟังก์ชันใหม่ที่ "อ่าน" Token ก่อน
+    // เรียกฟังก์ชัน "อ่าน Token" และ "ดึงข้อมูล" ทันที
+    _loadTokenAndFetchData(); 
   }
   
-  // ⭐️ 5. ฟังก์ชันใหม่สำหรับ "อ่าน" Token
+  // 5. [AUTO-LOAD] ฟังก์ชัน "อ่าน Token"
   Future<void> _loadTokenAndFetchData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? loadedToken = prefs.getString('token'); // ⬅️ อ่าน Token จากเครื่อง
+    // "อ่าน" Token จาก AuthService
+    final String? loadedToken = await AuthService.instance.getToken();
 
     if (loadedToken == null) {
-      // ❌ ถ้าไม่มี Token (เช่น โดนลบ หรือยังไม่ Login)
-      // ⚠️ ควรเด้งกลับไปหน้า Login
+      // ถ้าไม่มี Token (เช่น ยังไม่ Login หรือ Token หมดอายุ)
       print("No token found. User is not logged in.");
       setState(() { _isLoading = false; });
-      // (ตัวอย่าง: Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => LoginScreen())));
+      // ⚠️ ที่จริงตรงนี้ควรเด้งกลับไปหน้า Login
+      // Navigator.of(context).pushAndRemoveUntil(...)
       return;
     }
 
-    // ✅ ถ้ามี Token, เก็บไว้ใน State แล้วค่อยเรียก API
+    // ✅ ถ้ามี Token, เก็บไว้ใน State
     setState(() {
-      _token = loadedToken; // ⬅️ เก็บ Token ที่อ่านได้ไว้ใน State
+      _token = loadedToken; 
     });
 
-    // ⭐️ 6. ค่อยเรียก fetch ข้อมูล
+    // ค่อยเรียก API ดึงข้อมูล
     await _fetchReservations();
   }
+  
+  // 6. ฟังก์ชันสำหรับเรียก API (GET, PUT, PUT)
 
-  // ⭐️ 7. ปรับ _fetchReservations ให้ใช้ Token จาก State
   Future<void> _fetchReservations() async {
+    // ป้องกันการยิง API ถ้ายังไม่มี Token
     if (_token == null) {
-      print("Token is not loaded yet.");
-      return; 
+       print("Token is not loaded yet.");
+       return; 
     }
     
-    setState(() {
-      _isLoading = true;
-    });
+    // ไม่ต้อง setState(true) ซ้ำซ้อน ถ้า _loadTokenAndFetchData เรียก
+    // แต่ถ้าจะทำ pull-to-refresh ในอนาคต ให้เปิดบรรทัดนี้
+    // setState(() { _isLoading = true; });
 
     try {
       final response = await http.get(
-        Uri.parse('$_baseUrl/reservations'),
-        headers: _authHeaders, // ⬅️ _authHeaders จะดึง _token จาก State อัตโนมัติ
+        Uri.parse('$_apiBaseUrl/reservations'),
+        headers: _authHeaders, // ⬅️ ใช้ Token ที่อ่านมาได้
       );
 
-      // (.... ที่เหลือเหมือนเดิม ....)
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
+        
+        // แปลงข้อมูล API ให้ตรงกับที่ UI ต้องการ
         setState(() {
           _requests = data.map((item) {
             final createdAt = DateTime.parse(item['created_at']);
             return {
-              'reservation_id': item['reservation_id'], 
+              'reservation_id': item['reservation_id'], // รับมาแบบ dynamic
               'date': DateFormat('d MMMM yyyy').format(createdAt),
               'floor': 'Floor${item['floor']}',
               'room': 'R${item['room_no']}',
               'slot': 'Slot ${item['slot']}',
-              'time': DateFormat('hh:mm a').format(createdAt),
+              'time': DateFormat('hh:mm a').format(createdAt), // เวลาที่ส่งคำขอ
               'name': item['requested_by_username'],
             };
           }).toList();
-          _isLoading = false;
+          _isLoading = false; // ⬅️ โหลดเสร็จแล้ว
         });
       } else {
+        // จัดการ Error (เช่น 401, 403)
         print('Failed to load reservations: ${response.statusCode}');
         setState(() { _isLoading = false; });
       }
     } catch (e) {
+      // จัดการ Error (เช่น Network error)
       print('Error fetching reservations: $e');
       setState(() { _isLoading = false; });
     }
@@ -115,7 +120,7 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
     if (_token == null) return; // ⬅️ ถ้า Token ไม่มี ก็ไม่ต้องทำ
     try {
       final response = await http.put(
-        Uri.parse('$_baseUrl/reservations/$reservationId/approve'),
+        Uri.parse('$_apiBaseUrl/reservations/$reservationId/approve'), // ⬅️ แก้ไขตรงนี้
         headers: _authHeaders,
       );
       Navigator.of(context, rootNavigator: true).pop(); 
@@ -135,7 +140,7 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
     if (_token == null) return; // ⬅️ ถ้า Token ไม่มี ก็ไม่ต้องทำ
     try {
       final response = await http.put(
-        Uri.parse('$_baseUrl/reservations/$reservationId/reject'),
+        Uri.parse('$_apiBaseUrl/reservations/$reservationId/reject'), // ⬅️ แก้ไขตรงนี้
         headers: _authHeaders,
         body: jsonEncode({'note': note}), 
       );
