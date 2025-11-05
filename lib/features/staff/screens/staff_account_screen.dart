@@ -1,5 +1,6 @@
 // lib/features/Staff/pages/Staff_account_page.dart
 import 'package:flutter/material.dart';
+import 'package:room_reservation_system_app/services/auth_service.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
 import 'package:room_reservation_system_app/features/auth/auth.dart';
@@ -14,6 +15,13 @@ class StaffAccountScreen extends StatefulWidget {
 class _StaffAccountScreenState extends State<StaffAccountScreen> {
   @override
   Widget build(BuildContext context) {
+    final payload = AuthService.instance.payload;
+    final displayName =
+        (payload?['username'] as String?) ??
+        (payload?['email'] as String?) ??
+        'Unknown';
+    final email = (payload?['email'] as String?) ?? '-';
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -41,8 +49,8 @@ class _StaffAccountScreenState extends State<StaffAccountScreen> {
                 ),
               ),
               const SizedBox(height: 15),
-              const Text(
-                "Hi, Staff123!",
+              Text(
+                "Hi, $displayName!",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -50,8 +58,8 @@ class _StaffAccountScreenState extends State<StaffAccountScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                "staff123@gmail.com",
+              Text(
+                email,
                 style: TextStyle(fontSize: 14, color: Colors.white70),
               ),
               const SizedBox(height: 30),
@@ -132,6 +140,7 @@ class _StaffAccountScreenState extends State<StaffAccountScreen> {
               AppButton.solid(
                 label: 'Sign Out',
                 onPressed: () async {
+                  await AuthService.instance.logout();
                   Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (_) => const InitialScreen()),
                     (_) => false,

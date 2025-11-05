@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
+import 'package:room_reservation_system_app/services/auth_service.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/features/auth/auth.dart';
 
@@ -13,6 +14,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   final nameCtrl = TextEditingController();
+  final pass2Ctrl = TextEditingController();
   bool _obscure = true;
   bool _obscure2 = true;
 
@@ -21,6 +23,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     emailCtrl.dispose();
     passCtrl.dispose();
     nameCtrl.dispose();
+    pass2Ctrl.dispose();
     super.dispose();
   }
 
@@ -86,13 +89,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                       ),
                       child: Padding(
-                        padding: EdgeInsetsGeometry.symmetric(horizontal: 42),
+                        padding: EdgeInsets.symmetric(horizontal: 42),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             SizedBox(height: 40),
                             // Spacer(),
                             TextField(
+                              controller: emailCtrl,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
@@ -112,6 +116,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                             SizedBox(height: 14),
                             TextField(
+                              controller: nameCtrl,
                               textInputAction: TextInputAction.next,
                               decoration: InputDecoration(
                                 labelStyle: TextStyle(
@@ -130,6 +135,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                             SizedBox(height: 14),
                             TextField(
+                              controller: passCtrl,
                               textInputAction: TextInputAction.next,
                               keyboardType: TextInputType.visiblePassword,
                               obscureText: _obscure,
@@ -162,6 +168,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             ),
                             SizedBox(height: 14),
                             TextField(
+                              controller: pass2Ctrl,
                               textInputAction: TextInputAction.done,
                               keyboardType: TextInputType.visiblePassword,
                               obscureText: _obscure2,
@@ -195,7 +202,59 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             Spacer(flex: 2),
                             AppButton.solid(
                               label: 'SIGN UP',
-                              onPressed: () {
+                              onPressed: () async {
+                                final email = emailCtrl.text.trim();
+                                final username = nameCtrl.text.trim();
+                                final pass = passCtrl.text;
+                                final pass2 = pass2Ctrl.text;
+
+                                if (email.isEmpty ||
+                                    username.isEmpty ||
+                                    pass.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Please fill all fields'),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                if (email.isEmpty ||
+                                    username.isEmpty ||
+                                    pass.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Please fill all fields'),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                if (pass != pass2) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Passwords do not match'),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                final err = await AuthService.instance.signup(
+                                  email: email,
+                                  username: username,
+                                  password: pass,
+                                );
+                                if (!mounted) return;
+                                if (err == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Signup successful. Please sign in.',
+                                      ),
+                                    ),
+                                  );
+                                }
+
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(

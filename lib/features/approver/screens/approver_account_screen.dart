@@ -1,6 +1,7 @@
 // lib/features/Approver/pages/Approver_account_page.dart
 // lib/features/user/pages/user_account_page.dart
 import 'package:flutter/material.dart';
+import 'package:room_reservation_system_app/services/auth_service.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
 import 'package:room_reservation_system_app/features/auth/auth.dart';
@@ -15,6 +16,13 @@ class ApproverAccountScreen extends StatefulWidget {
 class _ApproverAccountScreenState extends State<ApproverAccountScreen> {
   @override
   Widget build(BuildContext context) {
+    final payload = AuthService.instance.payload;
+    final displayName =
+        (payload?['username'] as String?) ??
+        (payload?['email'] as String?) ??
+        'Unknown';
+    final email = (payload?['email'] as String?) ?? '-';
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -42,8 +50,8 @@ class _ApproverAccountScreenState extends State<ApproverAccountScreen> {
                 ),
               ),
               const SizedBox(height: 15),
-              const Text(
-                "Hi, Approver123!",
+              Text(
+                "Hi, $displayName!",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -51,8 +59,8 @@ class _ApproverAccountScreenState extends State<ApproverAccountScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                "approver123@gmail.com",
+              Text(
+                email,
                 style: TextStyle(fontSize: 14, color: Colors.white70),
               ),
               const SizedBox(height: 30),
@@ -133,6 +141,7 @@ class _ApproverAccountScreenState extends State<ApproverAccountScreen> {
               AppButton.solid(
                 label: 'Sign Out',
                 onPressed: () async {
+                  await AuthService.instance.logout();
                   Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (_) => const InitialScreen()),
                     (_) => false,

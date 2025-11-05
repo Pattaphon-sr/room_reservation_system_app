@@ -1,5 +1,6 @@
 // lib/features/user/pages/user_account_page.dart
 import 'package:flutter/material.dart';
+import 'package:room_reservation_system_app/services/auth_service.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
 import 'package:room_reservation_system_app/features/auth/auth.dart';
@@ -14,6 +15,13 @@ class UserAccountScreen extends StatefulWidget {
 class _UserAccountScreenState extends State<UserAccountScreen> {
   @override
   Widget build(BuildContext context) {
+    final payload = AuthService.instance.payload;
+    final displayName =
+        (payload?['username'] as String?) ??
+        (payload?['email'] as String?) ??
+        'Unknown';
+    final email = (payload?['email'] as String?) ?? '-';
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -41,17 +49,17 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
                 ),
               ),
               const SizedBox(height: 15),
-              const Text(
-                "Hi, User123!",
-                style: TextStyle(
+              Text(
+                "Hi, $displayName!",
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                "user123@gmail.com",
+              Text(
+                email,
                 style: TextStyle(fontSize: 14, color: Colors.white70),
               ),
               const SizedBox(height: 30),
@@ -132,6 +140,7 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
               AppButton.solid(
                 label: 'Sign Out',
                 onPressed: () async {
+                  await AuthService.instance.logout();
                   Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (_) => const InitialScreen()),
                     (_) => false,

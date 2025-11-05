@@ -31,33 +31,49 @@ class _SignInScreenState extends State<SignInScreen> {
     setState(() {
       loading = true;
     });
-    final role = await AuthService.instance.login(
-      email: emailCtrl.text.trim(),
-      password: passCtrl.text,
-    );
-    setState(() => loading = false);
 
-    if (role == null) {
-      return;
+    try {
+      final id = emailCtrl.text.trim();
+      final pass = passCtrl.text;
+      final looksLikeEmail = id.contains('@');
+
+      final role = await AuthService.instance.login(
+        email: looksLikeEmail ? id : null,
+        username: looksLikeEmail ? null : id,
+        password: pass,
+      );
+
+      setState(() => loading = false);
+
+      if (role == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid email or password')),
+        );
+        return;
+      }
+
+      Widget dest;
+      switch (role) {
+        case Role.user:
+          dest = const UserRoot();
+          break;
+        case Role.staff:
+          dest = const StaffRoot();
+          break;
+        case Role.approver:
+          dest = const ApproverRoot();
+          break;
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => dest),
+        (_) => false,
+      );
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
-
-    Widget dest;
-    switch (role) {
-      case Role.user:
-        dest = const UserRoot();
-        break;
-      case Role.staff:
-        dest = const StaffRoot();
-        break;
-      case Role.approver:
-        dest = const ApproverRoot();
-        break;
-    }
-
-    if (!mounted) return;
-    Navigator.of(
-      context,
-    ).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => dest), (_) => false);
   }
 
   @override
