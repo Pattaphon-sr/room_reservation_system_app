@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/features/staff/root.dart';
-
+import 'package:room_reservation_system_app/services/dashboard_service.dart';
 
 class StaffHomeScreen extends StatefulWidget {
   const StaffHomeScreen({super.key});
@@ -15,6 +13,8 @@ class StaffHomeScreen extends StatefulWidget {
 }
 
 class _StaffHomeScreenState extends State<StaffHomeScreen> {
+  final _dashboardApi = DashboardApi();
+
   Map<String, dynamic>? overallSummary;
   List<Map<String, dynamic>> floorSummary = [];
 
@@ -44,19 +44,14 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
 
   Future<void> fetchDashboard() async {
     try {
-      // const apiBaseUrl = 'http://192.168.3.100:3000';
-      const apiBaseUrl = 'http://172.25.21.26:3000';
-      final response = await http.get(Uri.parse('$apiBaseUrl/api/dashboard'));
-
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        setState(() {
-          overallSummary = Map<String, dynamic>.from(jsonData['overall_summary']);
-          floorSummary = List<Map<String, dynamic>>.from(jsonData['floor_summary']);
-        });
-      } else {
-        debugPrint('Failed to load dashboard: ${response.statusCode}');
-      }
+      final data = await _dashboardApi.getDashboard();
+      setState(() {
+        overallSummary = (data['overall_summary'] as Map?)
+            ?.cast<String, dynamic>();
+        floorSummary = ((data['floor_summary'] as List?) ?? const [])
+            .map((e) => (e as Map).cast<String, dynamic>())
+            .toList();
+      });
     } catch (e) {
       debugPrint('Error fetching dashboard: $e');
     }
@@ -244,9 +239,8 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    
     final reversedFloorData = floorData.reversed.toList();
-    
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Container(
@@ -339,11 +333,12 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                         return _buildFloorCard(
                           floor['title'] as String,
                           floor['asset'] as String,
-                          floor['panel'] as Widget Function({
-                            required double width,
-                            required double height,
-                            required Widget child,
-                          }),
+                          floor['panel']
+                              as Widget Function({
+                                required double width,
+                                required double height,
+                                required Widget child,
+                              }),
                         );
                       },
                     ),
@@ -352,29 +347,39 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
               ),
               const SizedBox(height: 35),
               for (var i = 0; i < reversedFloorData.length; i++) ...[
-                Builder(builder: (context) {
-                  final floorData = reversedFloorData[i]; // ใช้ข้อมูลที่กลับลำดับแล้ว
-                  final floorTitle = floorData['title'] as String;
-                  final floorNumber = int.tryParse(floorTitle.replaceAll('Floor ', ''));
-                  
-                  // ค้นหาข้อมูลสรุปที่ตรงกับหมายเลขชั้น
-                  final floorInfo = floorSummary.firstWhere(
-                    (f) => f['floor'] == floorNumber,
-                    orElse: () =>
-                        {'free': 0, 'pending': 0, 'booked': 0, 'disabled': 0},
-                  );
+                Builder(
+                  builder: (context) {
+                    final floorData =
+                        reversedFloorData[i]; // ใช้ข้อมูลที่กลับลำดับแล้ว
+                    final floorTitle = floorData['title'] as String;
+                    final floorNumber = int.tryParse(
+                      floorTitle.replaceAll('Floor ', ''),
+                    );
 
-                  return _buildFloorPanel(
-                    floorData['title'] as String,
-                    floorData['asset'] as String,
-                    floorInfo,
-                    floorData['panel'] as Widget Function({
-                      required double width,
-                      required double height,
-                      required Widget child,
-                    }),
-                  );
-                }),
+                    // ค้นหาข้อมูลสรุปที่ตรงกับหมายเลขชั้น
+                    final floorInfo = floorSummary.firstWhere(
+                      (f) => f['floor'] == floorNumber,
+                      orElse: () => {
+                        'free': 0,
+                        'pending': 0,
+                        'booked': 0,
+                        'disabled': 0,
+                      },
+                    );
+
+                    return _buildFloorPanel(
+                      floorData['title'] as String,
+                      floorData['asset'] as String,
+                      floorInfo,
+                      floorData['panel']
+                          as Widget Function({
+                            required double width,
+                            required double height,
+                            required Widget child,
+                          }),
+                    );
+                  },
+                ),
                 const SizedBox(height: 12),
               ],
               // -------------------------------------------------------------------

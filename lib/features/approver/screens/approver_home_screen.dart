@@ -1,10 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/features/approver/root.dart';
+import 'package:room_reservation_system_app/services/dashboard_service.dart';
 
 class ApproverHomeScreen extends StatefulWidget {
   const ApproverHomeScreen({super.key});
@@ -14,6 +12,9 @@ class ApproverHomeScreen extends StatefulWidget {
 }
 
 class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
+  final _dashboardApi = DashboardApi();
+  final _reservationsApi = DashboardApi();
+
   Map<String, dynamic>? overallSummary;
   List<Map<String, dynamic>> floorSummary = [];
   List<Map<String, dynamic>> dailyRequests = [];
@@ -43,25 +44,16 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
     fetchDailyRequests();
   }
 
-  // final apiBaseUrl = 'http://192.168.3.100:3000';
-  final apiBaseUrl = 'http://172.25.21.26:3000';
-
   Future<void> fetchDashboard() async {
     try {
-      final response = await http.get(Uri.parse('$apiBaseUrl/api/dashboard'));
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        setState(() {
-          overallSummary = Map<String, dynamic>.from(
-            jsonData['overall_summary'],
-          );
-          floorSummary = List<Map<String, dynamic>>.from(
-            jsonData['floor_summary'],
-          );
-        });
-      } else {
-        debugPrint('Failed to load dashboard: ${response.statusCode}');
-      }
+      final data = await _dashboardApi.getDashboard();
+      setState(() {
+        overallSummary = (data['overall_summary'] as Map?)
+            ?.cast<String, dynamic>();
+        floorSummary = ((data['floor_summary'] as List?) ?? const [])
+            .map((e) => (e as Map).cast<String, dynamic>())
+            .toList();
+      });
     } catch (e) {
       debugPrint('Error fetching dashboard: $e');
     }
@@ -110,21 +102,8 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
 
   Future<void> fetchDailyRequests() async {
     try {
-      final response = await http.get(
-        Uri.parse('$apiBaseUrl/api/dailyRequest'),
-      );
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        setState(() {
-          dailyRequests = List<Map<String, dynamic>>.from(
-            jsonData['data'] ?? [],
-          );
-        });
-      } else {
-        debugPrint(
-          'Failed to load daily requests: ${response.statusCode} ${response.body}',
-        );
-      }
+      final list = await _reservationsApi.getApproverDailyRequests();
+      setState(() => dailyRequests = list);
     } catch (e) {
       debugPrint('Error fetching daily requests: $e');
     }
@@ -158,117 +137,6 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
     );
   }
 
-  Widget _buildStatusRow(Color color, String label, String count) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(color: Colors.white, fontSize: 15),
-              ),
-            ],
-          ),
-          Text(
-            count,
-            style: const TextStyle(color: Colors.white, fontSize: 15),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFloorPanel(
-    String title,
-    String imageAsset,
-    Map<String, dynamic> floorInfo,
-    Widget Function({
-      required double width,
-      required double height,
-      required Widget child,
-    })
-    panelBuilder,
-  ) {
-    return panelBuilder(
-      width: double.infinity,
-      height: 170,
-      child: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Image.asset(
-                    imageAsset,
-                    fit: BoxFit.contain,
-                    height: 100,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.image_not_supported,
-                      color: Colors.white,
-                      size: 50,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 2,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildStatusRow(
-                    Colors.green,
-                    "Free Slots",
-                    floorInfo['free']?.toString() ?? '0',
-                  ),
-                  _buildStatusRow(
-                    Colors.amber,
-                    "Pending Slots",
-                    floorInfo['pending']?.toString() ?? '0',
-                  ),
-                  _buildStatusRow(
-                    Colors.blue,
-                    "Booked Slots",
-                    floorInfo['booked']?.toString() ?? '0',
-                  ),
-                  _buildStatusRow(
-                    Colors.red,
-                    "Disabled rooms",
-                    floorInfo['disabled']?.toString() ?? '0',
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildRequestItem(Map<String, dynamic> request) {
     final fullDateTime = request['full_datetime'] ?? '';
     final parts = fullDateTime.split(' ');
@@ -283,7 +151,7 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
     return Container(
       child: Column(
         children: [
-          SizedBox(height: 10,),
+          SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
