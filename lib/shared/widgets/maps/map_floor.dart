@@ -39,14 +39,47 @@ class MapFloor extends StatelessWidget {
   final double mainAxisExtent = 46;
   final void Function(int x, int y, Map<String, dynamic> cell)? onCellTap;
 
+  bool _isPastSelectedSlot() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    DateTime endTime;
+    switch (slotId) {
+      case 'S1':
+        endTime = today.add(const Duration(hours: 10)); // 08:00 - 10:00
+        break;
+      case 'S2':
+        endTime = today.add(const Duration(hours: 12)); // 10:00 - 12:00
+        break;
+      case 'S3':
+        endTime = today.add(const Duration(hours: 15)); // 13:00 - 15:00
+        break;
+      case 'S4':
+        endTime = today.add(const Duration(hours: 17)); // 15:00 - 17:00
+        break;
+      default:
+        endTime = today; // เผื่อกรณี slot แปลก ๆ
+    }
+    return now.isAfter(endTime);
+  }
+
+  /// normalize cell สำหรับการแสดงผลตาม role
   Map<String, dynamic> _normalizeForRole(
     Map<String, dynamic> cell,
     MapRole role,
   ) {
     if (role == MapRole.staff) return cell;
+
     if (cell['type'] == CellType.empty) {
       return {'x': cell['x'], 'y': cell['y'], 'type': CellType.corridor};
     }
+
+    if (role == MapRole.approver) return cell;
+
+    if (_isPastSelectedSlot() && cell['type'] == CellType.room) {
+      return {...cell, 'status': RoomStatus.disabled};
+    }
+
     return cell;
   }
 

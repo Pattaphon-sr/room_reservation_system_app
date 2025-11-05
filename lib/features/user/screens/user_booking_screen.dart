@@ -1,15 +1,12 @@
 // lib/features/user/pages/user_booking_page.dart
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
-
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/shared/widgets/maps/map_types.dart';
 import 'package:room_reservation_system_app/features/cells/data/cells_api.dart';
-
 import 'package:room_reservation_system_app/services/requestservices.dart';
+import 'package:room_reservation_system_app/services/auth_service.dart';
 
 class UserBookingScreen extends StatefulWidget {
   const UserBookingScreen({super.key});
@@ -23,7 +20,8 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
   final RequestServices _req = RequestServices();
   final _api = CellsApi();
   int? expandedFloor; // null = ยังไม่กดอะไรเลย
-  final String _currentUsername = 'User123';
+  final String _currentUsername =
+      AuthService.instance.payload?['username'] as String? ?? 'Unknown User';
   Map<String, dynamic>? currentSelectedCell;
 
   /// ใช้ slotId จริง (S1–S4) แล้วค่อย map เป็น label ตอนโชว์
@@ -41,19 +39,35 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
   // ========= cache จาก API + สถานะโหลด =========
   final Map<String, List<Map<String, dynamic>>> _cellsCache = {};
   final Set<String> _loadingKeys = {};
+  final Map<String, DateTime> _cellsFetchedAt = {};
+  Duration _staleAfter = const Duration(seconds: 10);
+
   String _key(int floor, String slotId) => '$floor-$slotId';
 
-  Future<void> _ensureCellsLoaded(int floor, String slotId) async {
+  Future<void> _ensureCellsLoaded(
+    int floor,
+    String slotId, {
+    bool force = false,
+  }) async {
     final key = _key(floor, slotId);
-    if (_cellsCache.containsKey(key) || _loadingKeys.contains(key)) return;
+
+    final fetchedAt = _cellsFetchedAt[key];
+    final isStale =
+        fetchedAt == null || DateTime.now().difference(fetchedAt) > _staleAfter;
+
+    if (!force && _cellsCache.containsKey(key) && !isStale) return;
+    if (_loadingKeys.contains(key)) return;
+
     _loadingKeys.add(key);
     if (mounted) setState(() {});
+
     // today -> YYYY-MM-DD
     final now = DateTime.now();
     final dateStr =
         '${now.year.toString().padLeft(4, '0')}-'
         '${now.month.toString().padLeft(2, '0')}-'
         '${now.day.toString().padLeft(2, '0')}';
+
     try {
       final cells = await _api.getMap(
         floor: floor,
@@ -61,8 +75,9 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
         date: dateStr,
       );
       _cellsCache[key] = cells;
+      _cellsFetchedAt[key] = DateTime.now();
     } catch (_) {
-      // ปล่อยว่างไว้ก่อน (จะได้ไม่พัง)
+      // เงียบไว้ก่อน
     } finally {
       _loadingKeys.remove(key);
       if (mounted) setState(() {});
@@ -243,11 +258,16 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
               setState(() {
                 _selectedSlotId = v;
               });
-              // โหลดข้อมูล map ของ slot ใหม่นี้ (ทั้ง 3 ชั้น)
+              // บังคับโหลดใหม่ทุกชั้น
               for (final f in [3, 4, 5]) {
-                _ensureCellsLoaded(f, _selectedSlotId);
+                _ensureCellsLoaded(
+                  f,
+                  _selectedSlotId,
+                  force: true,
+                ); // <-- force = true
               }
             },
+
             items: items,
           ),
         ),
@@ -284,7 +304,11 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
         setState(() {
           expandedFloor = (expandedFloor == floor) ? null : floor;
         });
+        if (expandedFloor == floor) {
+          _ensureCellsLoaded(floor, _selectedSlotId, force: true);
+        }
       },
+
       child: ClipRect(
         child: AnimatedContainer(
           duration: _kAnimDur,
@@ -468,31 +492,35 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
     required String slot,
     required String user,
   }) async {
-    try {
-      final cellId = currentSelectedCell!['id']; // << เดี๋ยวเราจะอธิบาย
+    final cell = currentSelectedCell;
+    if (cell == null) return false;
 
-      final dio = Dio(
-        BaseOptions(
-          baseUrl: "http://172.25.21.93:3000",
-          headers: {"Content-Type": "application/json"},
-        ),
-      );
+    final cellId = (cell['id'] as int?) ?? -1;
+    if (cellId <= 0) return false;
 
-      final res = await dio.post(
-        "/reservations/request",
-        data: {
-          "cell_id": cellId,
-          "slot_id": _selectedSlotId,
-          "requested_by": 1, // user id login จริง
-        },
-      );
+    final userId = AuthService.instance.payload?['id'] as int?;
+    if (userId == null) return false;
 
-      print(res.data);
-      return true;
-    } catch (e) {
-      print("DIO ERR => $e");
-      return false;
+    final ok = await _req.sendReservationRequest(
+      cellId: cellId,
+      slotId: _selectedSlotId,
+      userId: userId,
+    );
+
+    // ถ้าสำเร็จ รีเฟรชแผนที่ชั้นที่เกี่ยวข้องให้เห็นสถานะล่าสุดทันที
+    if (ok) {
+      // ถ้า cell มี floor ติดมา ใช้นั้น, ถ้าไม่มีก็รีเฟรชทุกชั้น
+      final int? floorOfCell = cell['floor'] as int?;
+      if (floorOfCell != null) {
+        await _ensureCellsLoaded(floorOfCell, _selectedSlotId, force: true);
+      } else {
+        for (final f in [3, 4, 5]) {
+          await _ensureCellsLoaded(f, _selectedSlotId, force: true);
+        }
+      }
     }
+
+    return ok;
   }
 
   Future<void> _showResultPopup({required bool ok}) async {

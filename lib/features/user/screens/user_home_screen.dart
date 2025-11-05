@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
@@ -25,6 +24,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   Timer? _timer;
+  bool _refreshing = false; // กันเรียกซ้อน
 
   final List<Map<String, dynamic>> floorData = const [
     {
@@ -47,7 +47,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    _fetchData(initial: true); // โหลดรอบแรกแบบมี spinner
+    _timer = Timer.periodic(const Duration(seconds: 3), (_) => _tickRefresh());
   }
 
   @override
@@ -56,23 +57,40 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchData() async {
-    await _fetchDashboardSummary();
+  Future<void> _fetchData({bool initial = false}) async {
+    await _fetchDashboardSummary(
+      silent: !initial,
+    ); // รอบแรกไม่ silent เพื่อโชว์ spinner
     await _fetchDailyReservation();
   }
 
-  Future<void> _fetchDashboardSummary() async {
+  Future<void> _tickRefresh() async {
+    if (!mounted || _refreshing) return;
+    _refreshing = true;
     try {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = '';
-      });
+      await Future.wait([
+        _fetchDashboardSummary(silent: true), // ไม่โชว์ spinner
+        _fetchDailyReservation(), // ปล่อยให้อัปเดต panel รายวัน
+      ]);
+    } finally {
+      _refreshing = false;
+    }
+  }
+
+  Future<void> _fetchDashboardSummary({bool silent = false}) async {
+    try {
+      if (!silent) {
+        setState(() {
+          _isLoading = true;
+          _errorMessage = '';
+        });
+      }
 
       final data = await _dashboardApi.getDashboard();
       final List rawList =
           (data['available_by_floor_slot'] as List?) ?? const [];
 
-      // group ให้ได้ time,f3,f4,f5 เหมือนเดิม
+      // group ให้ได้ time,f3,f4,f5
       final grouped = <String, Map<String, dynamic>>{};
       for (final item in rawList) {
         final m = (item as Map).cast<String, dynamic>();
@@ -89,19 +107,21 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         if (floor == 5) grouped[slot]!['f5'] = available;
       }
 
+      if (!mounted) return;
       setState(() {
         _availabilityData = grouped.values.toList();
-        _isLoading = false;
+        if (!silent) _isLoading = false;
+        _errorMessage = '';
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _errorMessage = 'Unable to connect to server';
-        _availabilityData = [];
-        _isLoading = false;
-      });
-
-      Future.delayed(const Duration(seconds: 5), () {
-        if (mounted) _fetchDashboardSummary();
+        // โหมด silent ไม่ต้องรบกวน UI ที่มีอยู่ (ไม่เคลียร์ data/ไม่เปิด spinner)
+        if (!silent) {
+          _errorMessage = 'Unable to connect to server';
+          _availabilityData = [];
+          _isLoading = false;
+        }
       });
     }
   }
@@ -235,7 +255,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         _dailyReservations = list;
       });
     } catch (e) {
-      'Error fetching daily reservation: $e';
+      debugPrint('Error fetching daily reservation: $e');
     }
   }
 
