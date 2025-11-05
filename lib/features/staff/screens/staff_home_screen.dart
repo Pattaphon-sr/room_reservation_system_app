@@ -1,7 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
-import 'package:room_reservation_system_app/features/staff/root.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
+import 'package:room_reservation_system_app/features/staff/root.dart';
+
 
 class StaffHomeScreen extends StatefulWidget {
   const StaffHomeScreen({super.key});
@@ -11,6 +15,53 @@ class StaffHomeScreen extends StatefulWidget {
 }
 
 class _StaffHomeScreenState extends State<StaffHomeScreen> {
+  Map<String, dynamic>? overallSummary;
+  List<Map<String, dynamic>> floorSummary = [];
+
+  final List<Map<String, dynamic>> floorData = const [
+    {
+      'title': 'Floor 3',
+      'asset': 'assets/images/Photoroom_Floor3.png',
+      'panel': PanelPresets.sky,
+    },
+    {
+      'title': 'Floor 4',
+      'asset': 'assets/images/Photoroom_Floor4.png',
+      'panel': PanelPresets.purple,
+    },
+    {
+      'title': 'Floor 5',
+      'asset': 'assets/images/Photoroom_Floor5.png',
+      'panel': PanelPresets.pink,
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchDashboard();
+  }
+
+  Future<void> fetchDashboard() async {
+    try {
+      // const apiBaseUrl = 'http://192.168.3.100:3000';
+      const apiBaseUrl = 'http://172.25.21.26:3000';
+      final response = await http.get(Uri.parse('$apiBaseUrl/api/dashboard'));
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        setState(() {
+          overallSummary = Map<String, dynamic>.from(jsonData['overall_summary']);
+          floorSummary = List<Map<String, dynamic>>.from(jsonData['floor_summary']);
+        });
+      } else {
+        debugPrint('Failed to load dashboard: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error fetching dashboard: $e');
+    }
+  }
+
   Widget _buildStatCard(Color color, String count, String label) {
     return PanelPresets.air(
       width: 150,
@@ -33,7 +84,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                 const SizedBox(width: 30),
                 Text(
                   count,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 20,
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -42,30 +93,15 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
               ],
             ),
             const SizedBox(width: 40),
-            Text(label, style: TextStyle(fontSize: 17, color: Colors.white)),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 17, color: Colors.white),
+            ),
           ],
         ),
       ),
     );
   }
-
-  final List<Map<String, dynamic>> floorData = const [
-    {
-      'title': 'Floor 3',
-      'asset': 'assets/images/Photoroom_Floor3.png',
-      'panel': PanelPresets.sky,
-    },
-    {
-      'title': 'Floor 4',
-      'asset': 'assets/images/Photoroom_Floor4.png',
-      'panel': PanelPresets.purple,
-    },
-    {
-      'title': 'Floor 5',
-      'asset': 'assets/images/Photoroom_Floor5.png',
-      'panel': PanelPresets.pink,
-    },
-  ];
 
   Widget _buildFloorCard(
     String title,
@@ -127,6 +163,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
   Widget _buildFloorPanel(
     String title,
     String imageAsset,
+    Map<String, dynamic> floorInfo,
     Widget Function({
       required double width,
       required double height,
@@ -176,10 +213,26 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildStatusRow(Colors.green, "Free Slots", "10"),
-                  _buildStatusRow(Colors.amber, "Pending Slots", "6"),
-                  _buildStatusRow(Colors.blue, "Booked Slots", "3"),
-                  _buildStatusRow(Colors.red, "Disabled rooms", "3"),
+                  _buildStatusRow(
+                    Colors.green,
+                    "Free Slots",
+                    floorInfo['free']?.toString() ?? '0',
+                  ),
+                  _buildStatusRow(
+                    Colors.amber,
+                    "Pending Slots",
+                    floorInfo['pending']?.toString() ?? '0',
+                  ),
+                  _buildStatusRow(
+                    Colors.blue,
+                    "Booked Slots",
+                    floorInfo['booked']?.toString() ?? '0',
+                  ),
+                  _buildStatusRow(
+                    Colors.red,
+                    "Disabled rooms",
+                    floorInfo['disabled']?.toString() ?? '0',
+                  ),
                 ],
               ),
             ),
@@ -191,6 +244,9 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    
+    final reversedFloorData = floorData.reversed.toList();
+    
     return Scaffold(
       body: SingleChildScrollView(
         child: Container(
@@ -202,7 +258,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
               stops: AppColorStops.primaryStop5C,
             ),
           ),
-          padding: const EdgeInsets.all(16), // Use const here
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -220,10 +276,26 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                 spacing: 20,
                 runSpacing: 20,
                 children: [
-                  _buildStatCard(AppColors.success, '30', 'Free slots'),
-                  _buildStatCard(AppColors.warning, '18', 'Pending slots'),
-                  _buildStatCard(AppColors.primary, '9', 'Booked Slots'),
-                  _buildStatCard(AppColors.danger, '9', 'Disabled rooms'),
+                  _buildStatCard(
+                    AppColors.success,
+                    overallSummary?['free']?.toString() ?? '0',
+                    'Free slots',
+                  ),
+                  _buildStatCard(
+                    AppColors.warning,
+                    overallSummary?['pending']?.toString() ?? '0',
+                    'Pending slots',
+                  ),
+                  _buildStatCard(
+                    AppColors.primary,
+                    overallSummary?['booked']?.toString() ?? '0',
+                    'Booked Slots',
+                  ),
+                  _buildStatCard(
+                    AppColors.danger,
+                    overallSummary?['disabled']?.toString() ?? '0',
+                    'Disabled rooms',
+                  ),
                 ],
               ),
               const SizedBox(height: 20),
@@ -233,7 +305,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
+                      const Text(
                         "FLOOR LIST",
                         style: TextStyle(
                           color: Colors.white,
@@ -243,7 +315,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                       ),
                       GestureDetector(
                         onTap: () => StaffRoot.goTo(context, 1),
-                        child: Text(
+                        child: const Text(
                           "See All",
                           style: TextStyle(
                             color: Colors.white,
@@ -267,12 +339,11 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                         return _buildFloorCard(
                           floor['title'] as String,
                           floor['asset'] as String,
-                          floor['panel']
-                              as Widget Function({
-                                required double width,
-                                required double height,
-                                required Widget child,
-                              }),
+                          floor['panel'] as Widget Function({
+                            required double width,
+                            required double height,
+                            required Widget child,
+                          }),
                         );
                       },
                     ),
@@ -280,19 +351,33 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                 ],
               ),
               const SizedBox(height: 35),
-              for (var floor in floorData.reversed.toList()) ...[
-                _buildFloorPanel(
-                  floor['title'] as String,
-                  floor['asset'] as String,
-                  floor['panel']
-                      as Widget Function({
-                        required double width,
-                        required double height,
-                        required Widget child,
-                      }),
-                ),
+              for (var i = 0; i < reversedFloorData.length; i++) ...[
+                Builder(builder: (context) {
+                  final floorData = reversedFloorData[i]; // ใช้ข้อมูลที่กลับลำดับแล้ว
+                  final floorTitle = floorData['title'] as String;
+                  final floorNumber = int.tryParse(floorTitle.replaceAll('Floor ', ''));
+                  
+                  // ค้นหาข้อมูลสรุปที่ตรงกับหมายเลขชั้น
+                  final floorInfo = floorSummary.firstWhere(
+                    (f) => f['floor'] == floorNumber,
+                    orElse: () =>
+                        {'free': 0, 'pending': 0, 'booked': 0, 'disabled': 0},
+                  );
+
+                  return _buildFloorPanel(
+                    floorData['title'] as String,
+                    floorData['asset'] as String,
+                    floorInfo,
+                    floorData['panel'] as Widget Function({
+                      required double width,
+                      required double height,
+                      required Widget child,
+                    }),
+                  );
+                }),
                 const SizedBox(height: 12),
               ],
+              // -------------------------------------------------------------------
             ],
           ),
         ),

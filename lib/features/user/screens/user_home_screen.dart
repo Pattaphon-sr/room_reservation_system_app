@@ -1,6 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:room_reservation_system_app/core/theme/theme.dart';
+import 'package:http/http.dart' as http;
 
+import 'package:room_reservation_system_app/core/theme/theme.dart';
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
 import 'package:room_reservation_system_app/features/user/root.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
@@ -13,12 +16,23 @@ class UserHomeScreen extends StatefulWidget {
 }
 
 class _UserHomeScreenState extends State<UserHomeScreen> {
-  final List<Map<String, dynamic>> availabilityData = [
-    {'time': '8am-10am', 'f3': 10, 'f4': 5, 'f5': 13},
-    {'time': '10am-12pm', 'f3': 6, 'f4': 8, 'f5': 16},
-    {'time': '1pm-3pm', 'f3': 2, 'f4': 3, 'f5': 9},
-    {'time': '3pm-5pm', 'f3': 10, 'f4': 5, 'f5': 4},
-  ];
+  // String apiUrl = 'http://192.168.3.100:3000/api/dashboard';
+  //test
+  String apiUrl = 'http://172.25.21.26:3000/api/dashboard';
+  // String apiDailyReservation =
+  //     'http://192.168.3.100:3000/api/reservations/daily?userId=1';
+  String apiDailyReservation =
+      'http://172.25.21.26:3000/api/reservations/daily?userId=1';
+
+  // String apiDailyReservation =
+  // 'http://192.168.3.100:3000/api/reservations/daily?userId=';
+
+  List<Map<String, dynamic>> _availabilityData = [];
+  List<Map<String, dynamic>> _dailyReservations = [];
+
+  bool _isLoading = true;
+  String _errorMessage = '';
+  Timer? _timer;
 
   final List<Map<String, dynamic>> floorData = const [
     {
@@ -37,6 +51,71 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       'panel': PanelPresets.pink,
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchData() async {
+    await _fetchDashboardSummary();
+    await _fetchDailyReservation();
+  }
+
+  Future<void> _fetchDashboardSummary() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = '';
+      });
+
+      final response = await http.get(Uri.parse(apiUrl));
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final List<dynamic> rawList = data['available_by_floor_slot'] ?? [];
+        final List<dynamic> list = rawList;
+
+        final grouped = <String, Map<String, dynamic>>{};
+        for (var item in list) {
+          final slot = item['slot_label'];
+          final floor = item['floor'];
+          final available = item['available_rooms'];
+
+          grouped.putIfAbsent(
+            slot,
+            () => {'time': slot, 'f3': 0, 'f4': 0, 'f5': 0},
+          );
+          if (floor == 3) grouped[slot]!['f3'] = available;
+          if (floor == 4) grouped[slot]!['f4'] = available;
+          if (floor == 5) grouped[slot]!['f5'] = available;
+        }
+
+        setState(() {
+          _availabilityData = grouped.values.toList();
+          _isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to load data (Status: ${response.statusCode})');
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Unable to connect to server';
+        _availabilityData = [];
+        _isLoading = false;
+      });
+
+      Future.delayed(const Duration(seconds: 5), () {
+        if (mounted) _fetchDashboardSummary();
+      });
+    }
+  }
 
   Widget _buildFloorCard(
     String title,
@@ -66,6 +145,190 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
+  Widget _buildDashboardTable() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+    if (_errorMessage.isNotEmpty) {
+      return Center(
+        child: Text(
+          _errorMessage,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+    if (_availabilityData.isEmpty) {
+      return const Center(
+        child: Text(
+          "No available time slots or data is empty.",
+          style: TextStyle(color: Colors.white70),
+        ),
+      );
+    }
+
+    return Column(
+      children: _availabilityData.map((row) {
+        return Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    row['time'],
+                    textAlign: TextAlign.start,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '${row['f3']}',
+                      style: const TextStyle(
+                        color: Color(0xFFADFF2F),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '${row['f4']}',
+                      style: const TextStyle(
+                        color: Color(0xFFADFF2F),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '${row['f5']}',
+                      style: const TextStyle(
+                        color: Color(0xFFADFF2F),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  Future<void> _fetchDailyReservation() async {
+    try {
+      final response = await http.get(Uri.parse(apiDailyReservation));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _dailyReservations = List<Map<String, dynamic>>.from(
+            data['data'] ?? [],
+          );
+        });
+      } else {
+        print('Failed to fetch daily reservation (${response.statusCode})');
+      }
+    } catch (e) {
+      print('Error fetching daily reservation: $e');
+    }
+  }
+
+  Widget _buildDailyReservationPanel() {
+    if (_dailyReservations.isEmpty) {
+      return const Center(
+        child: Text(
+          'There are no reservation requests today.',
+          style: TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+      );
+    }
+
+    return Column(
+      children: _dailyReservations.map((item) {
+        final String status = item['status'] ?? '';
+        final String displayStatus = status.isEmpty
+            ? ''
+            : '${status[0].toUpperCase()}${status.substring(1).toLowerCase()}';
+
+        return Column(
+          children: [
+            const SizedBox(height: 1),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          displayStatus,
+                          style: const TextStyle(
+                            color: Colors.amber,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Floor ${item['floor']}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Text(
+                  'Room: ${item['room_name']}',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Slot ${item['slot_label']}',
+                  style: TextStyle(color: Colors.white, fontSize: 14),
+                ),
+                Text(
+                  '${item['full_datetime'] ?? ''}',
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+              ],
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,13 +342,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
         ),
         child: Padding(
-          padding: EdgeInsetsGeometry.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 40),
-              Text(
-                'Dashboard',
+              const Text(
+                'HOME',
                 style: TextStyle(
                   fontSize: 35,
                   fontWeight: FontWeight.bold,
@@ -95,10 +358,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               const SizedBox(height: 15),
               PanelPresets.air(
                 width: double.infinity,
-                height: 135,
+                height: 160,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    vertical: 12,
+                    vertical: 11,
                     horizontal: 16,
                   ),
                   child: Column(
@@ -115,7 +378,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
-                              textAlign: TextAlign.center,
                             ),
                           ),
                           Expanded(
@@ -153,65 +415,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 2),
-                      for (var row in availabilityData)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 1),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  row['time'],
-                                  textAlign: TextAlign.start,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Center(
-                                  child: Text(
-                                    '${row['f3']}',
-                                    style: const TextStyle(
-                                      color: Color(0xFFADFF2F), // เขียวเรืองแสง
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Center(
-                                  child: Text(
-                                    '${row['f4']}',
-                                    style: const TextStyle(
-                                      color: Color(0xFFADFF2F),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Center(
-                                  child: Text(
-                                    '${row['f5']}',
-                                    style: const TextStyle(
-                                      color: Color(0xFFADFF2F),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      const SizedBox(height: 4),
+                      Expanded(child: _buildDashboardTable()),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 25),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -239,75 +449,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               const SizedBox(height: 10),
               PanelPresets.purple(
                 width: double.infinity,
-                height: 205,
+                height: 90,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    'Pending',
-                                    style: TextStyle(
-                                      color: Colors.amber,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Floor 5',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const Text(
-                            'R501',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Slot 08:00-10:00',
-                            style: TextStyle(color: Colors.white, fontSize: 13),
-                          ),
-                          Text(
-                            '22 Oct 2025 - 07:48 AM',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Container(height: 1, color: Colors.white30),
-                    ],
-                  ),
+                  child: _buildDailyReservationPanel(),
                 ),
               ),
-              const SizedBox(height: 15),
+              const SizedBox(height: 40),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -320,7 +468,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => UserRoot.goTo(context, 1),
+                    onTap: () => UserRoot.goTo(context, 2),
                     child: Text(
                       "See All",
                       style: TextStyle(
