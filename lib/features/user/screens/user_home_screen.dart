@@ -173,57 +173,59 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
     return Column(
       children: _availabilityData.map((row) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 1),
-          child: Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: Text(
-                  row['time'],
-                  textAlign: TextAlign.start,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Center(
+        return Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
                   child: Text(
-                    '${row['f3']}',
+                    row['time'],
+                    textAlign: TextAlign.start,
                     style: const TextStyle(
-                      color: Color(0xFFADFF2F),
-                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    '${row['f4']}',
-                    style: const TextStyle(
-                      color: Color(0xFFADFF2F),
-                      fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '${row['f3']}',
+                      style: const TextStyle(
+                        color: Color(0xFFADFF2F),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    '${row['f5']}',
-                    style: const TextStyle(
-                      color: Color(0xFFADFF2F),
-                      fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '${row['f4']}',
+                      style: const TextStyle(
+                        color: Color(0xFFADFF2F),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      '${row['f5']}',
+                      style: const TextStyle(
+                        color: Color(0xFFADFF2F),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
         );
       }).toList(),
     );
@@ -257,13 +259,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       );
     }
 
-    return ListView.builder(
-      itemCount: _dailyReservations.length,
-      itemBuilder: (context, index) {
-        final item = _dailyReservations[index];
+    return Column(
+      children: _dailyReservations.map((item) {
+        final String status = item['status'] ?? '';
+        final String displayStatus = status.isEmpty
+            ? ''
+            : '${status[0].toUpperCase()}${status.substring(1).toLowerCase()}';
+
         return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: 1),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -273,11 +278,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     Row(
                       children: [
                         Text(
-                          (item['status'] ?? '').toUpperCase(),
+                          displayStatus,
                           style: const TextStyle(
                             color: Colors.amber,
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                            fontSize: 16,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -294,7 +299,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   ],
                 ),
                 Text(
-                  'R ${item['room_name']}',
+                  'Room: ${item['room_name']}',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -303,29 +308,23 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Slot ${item['slot_label']}',
-                  style: TextStyle(color: Colors.white, fontSize: 13),
+                  style: TextStyle(color: Colors.white, fontSize: 14),
                 ),
                 Text(
                   '${item['full_datetime'] ?? ''}',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Container(height: 1, color: Colors.white30),
           ],
         );
-      },
+      }).toList(),
     );
   }
 
@@ -358,7 +357,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               const SizedBox(height: 15),
               PanelPresets.air(
                 width: double.infinity,
-                height: 135,
+                height: 160,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     vertical: 11,
@@ -421,7 +420,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 25),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -449,13 +448,13 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               const SizedBox(height: 10),
               PanelPresets.purple(
                 width: double.infinity,
-                height: 205,
+                height: 90,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: _buildDailyReservationPanel(),
                 ),
               ),
-              const SizedBox(height: 15),
+              const SizedBox(height: 40),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
