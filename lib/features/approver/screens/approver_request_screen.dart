@@ -2,6 +2,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:room_reservation_system_app/core/config/env.dart';
 import 'package:room_reservation_system_app/services/auth_service.dart';
 // ------------------------------
 
@@ -21,8 +22,8 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
 
   // 2. กำหนดค่า API
   // ⚠️ ต้องตรงกับที่ AuthService ใช้ (10.0.2.2 คือ localhost สำหรับ Android)
-  final String _apiBaseUrl = 'http://localhost:3000/api'; 
-  
+  final String _apiBaseUrl = '${Env.baseUrl}/api';
+
   // 3. ปรับปรุง STATE
   String? _token; // ตัวแปรสำหรับเก็บ Token ที่ "อ่าน" มาได้
   bool _isLoading = true; // เริ่มต้นที่ "กำลังโหลด"
@@ -39,18 +40,20 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
   void initState() {
     super.initState();
     // เรียกฟังก์ชัน "อ่าน Token" และ "ดึงข้อมูล" ทันที
-    _loadTokenAndFetchData(); 
+    _loadTokenAndFetchData();
   }
-  
+
   // 5. [AUTO-LOAD] ฟังก์ชัน "อ่าน Token"
   Future<void> _loadTokenAndFetchData() async {
     // "อ่าน" Token จาก AuthService
-    final String? loadedToken = await AuthService.instance.getToken();
+    final String? loadedToken = AuthService.instance.token;
 
     if (loadedToken == null) {
       // ถ้าไม่มี Token (เช่น ยังไม่ Login หรือ Token หมดอายุ)
       print("No token found. User is not logged in.");
-      setState(() { _isLoading = false; });
+      setState(() {
+        _isLoading = false;
+      });
       // ⚠️ ที่จริงตรงนี้ควรเด้งกลับไปหน้า Login
       // Navigator.of(context).pushAndRemoveUntil(...)
       return;
@@ -58,22 +61,22 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
 
     // ✅ ถ้ามี Token, เก็บไว้ใน State
     setState(() {
-      _token = loadedToken; 
+      _token = loadedToken;
     });
 
     // ค่อยเรียก API ดึงข้อมูล
     await _fetchReservations();
   }
-  
+
   // 6. ฟังก์ชันสำหรับเรียก API (GET, PUT, PUT)
 
   Future<void> _fetchReservations() async {
     // ป้องกันการยิง API ถ้ายังไม่มี Token
     if (_token == null) {
-       print("Token is not loaded yet.");
-       return; 
+      print("Token is not loaded yet.");
+      return;
     }
-    
+
     // ไม่ต้อง setState(true) ซ้ำซ้อน ถ้า _loadTokenAndFetchData เรียก
     // แต่ถ้าจะทำ pull-to-refresh ในอนาคต ให้เปิดบรรทัดนี้
     // setState(() { _isLoading = true; });
@@ -86,7 +89,7 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        
+
         // แปลงข้อมูล API ให้ตรงกับที่ UI ต้องการ
         setState(() {
           _requests = data.map((item) {
@@ -106,12 +109,16 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
       } else {
         // จัดการ Error (เช่น 401, 403)
         print('Failed to load reservations: ${response.statusCode}');
-        setState(() { _isLoading = false; });
+        setState(() {
+          _isLoading = false;
+        });
       }
     } catch (e) {
       // จัดการ Error (เช่น Network error)
       print('Error fetching reservations: $e');
-      setState(() { _isLoading = false; });
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -120,13 +127,15 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
     if (_token == null) return; // ⬅️ ถ้า Token ไม่มี ก็ไม่ต้องทำ
     try {
       final response = await http.put(
-        Uri.parse('$_apiBaseUrl/reservations/$reservationId/approve'), // ⬅️ แก้ไขตรงนี้
+        Uri.parse(
+          '$_apiBaseUrl/reservations/$reservationId/approve',
+        ), // ⬅️ แก้ไขตรงนี้
         headers: _authHeaders,
       );
-      Navigator.of(context, rootNavigator: true).pop(); 
+      Navigator.of(context, rootNavigator: true).pop();
       if (response.statusCode == 200) {
         _showApproveSuccessDialog(context);
-        await _fetchReservations(); 
+        await _fetchReservations();
       } else {
         print('Failed to approve: ${response.statusCode}');
       }
@@ -140,11 +149,13 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
     if (_token == null) return; // ⬅️ ถ้า Token ไม่มี ก็ไม่ต้องทำ
     try {
       final response = await http.put(
-        Uri.parse('$_apiBaseUrl/reservations/$reservationId/reject'), // ⬅️ แก้ไขตรงนี้
+        Uri.parse(
+          '$_apiBaseUrl/reservations/$reservationId/reject',
+        ), // ⬅️ แก้ไขตรงนี้
         headers: _authHeaders,
-        body: jsonEncode({'note': note}), 
+        body: jsonEncode({'note': note}),
       );
-      Navigator.of(context, rootNavigator: true).pop(); 
+      Navigator.of(context, rootNavigator: true).pop();
       if (response.statusCode == 200) {
         _showDisapproveSuccessDialog(context);
         await _fetchReservations();
