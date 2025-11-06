@@ -218,7 +218,11 @@ class _StaffBookingScreenPageState extends State<StaffBookingScreen>
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
             value: _selectedSlotId,
-            icon: const SizedBox.shrink(),
+            icon: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Colors.white70,
+            ),
+            iconSize: 24,
             isExpanded: true,
             alignment: Alignment.center,
             dropdownColor: const Color.fromARGB(

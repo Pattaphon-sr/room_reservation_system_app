@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:room_reservation_system_app/core/config/env.dart';
 import 'package:room_reservation_system_app/features/user/screens/user_history_screen.dart';
+import 'package:room_reservation_system_app/services/auth_service.dart';
 
 class UserHistoryService {
-  final String baseUrl = 'http://192.168.1.6:3000';
+  final String baseUrl = '${Env.baseUrl}';
 
   /// ดึงประวัติการจองของ User (กรองเฉพาะของตัวเอง)
   Future<List<ActivityItem>> fetchHistory() async {
@@ -32,8 +34,8 @@ class UserHistoryService {
           );
         }
 
-        const String currentUserId =
-            'Lisa'; // ✅ เปลี่ยนเป็น '1' เพราะ Database ใช้ ID
+        String currentUserId =
+            AuthService.instance.payload?['username']?.toString() ?? '';
 
         final filtered = data
             .where(

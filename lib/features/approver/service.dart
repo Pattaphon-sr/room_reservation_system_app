@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:room_reservation_system_app/core/config/env.dart';
 import 'package:room_reservation_system_app/features/approver/screens/approver_history_screen.dart';
 
 /// Model สำหรับคำขอจองที่รอพิจารณา
@@ -37,7 +38,7 @@ class PendingReservation {
 }
 
 class ApproverHistoryService {
-  final String baseUrl = 'http://192.168.1.6:3000';
+  final String baseUrl = '${Env.baseUrl}';
 
   // ==================== HISTORY ====================
 

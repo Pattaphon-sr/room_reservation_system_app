@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:room_reservation_system_app/core/config/env.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/staff_history_screen.dart';
 
 class StaffHistoryService {
-  final String baseUrl = 'http://192.168.1.6:3000';
+  final String baseUrl = '${Env.baseUrl}';
 
   Future<List<ActivityItem>> fetchHistory() async {
     try {

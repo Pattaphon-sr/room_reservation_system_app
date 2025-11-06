@@ -44,6 +44,36 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
 
   String _key(int floor, String slotId) => '$floor-$slotId';
 
+  bool _hasCells(int floor, String slotId) {
+    final key = _key(floor, slotId);
+    final list = _cellsCache[key];
+    return list != null && list.isNotEmpty;
+  }
+
+  Widget _mapOrShrink(int floor) {
+    final key = _key(floor, _selectedSlotId);
+    final isLoading = _loadingKeys.contains(key);
+    final cells = _cellsCache[key];
+
+    // ยังไม่โหลด / กำลังโหลด / โหลดแล้วแต่ลิสต์ว่าง → ยุบไว้ก่อน
+    if (isLoading || cells == null || cells.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return RepaintBoundary(
+      child: MapFloor(
+        floor: floor,
+        slotId: _selectedSlotId,
+        role: MapRole.user,
+        cells: cells,
+        onCellTap: (x, y, cell) {
+          currentSelectedCell = cell;
+          _showBookingPopup(cell);
+        },
+      ),
+    );
+  }
+
   Future<void> _ensureCellsLoaded(
     int floor,
     String slotId, {
@@ -239,7 +269,11 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
             value: _selectedSlotId,
-            icon: const SizedBox.shrink(),
+            icon: const Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Colors.white70,
+            ),
+            iconSize: 24,
             isExpanded: true,
             alignment: Alignment.center,
             dropdownColor: const Color.fromARGB(
@@ -384,36 +418,16 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
                               top: isExpanded ? 130 : 160,
                               left: 0,
                               right: 0,
-                              child: AnimatedSize(
-                                duration: _kAnimDur,
-                                curve: _kAnimCurve,
-                                alignment: Alignment.topCenter,
-                                child: (expandedFloor == floor)
-                                    ? Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 1,
-                                        ),
-                                        child: RepaintBoundary(
-                                          child: MapFloor(
-                                            floor: floor,
-                                            slotId: _selectedSlotId,
-                                            role: MapRole.user,
-                                            cells:
-                                                _cellsCache[_key(
-                                                  floor,
-                                                  _selectedSlotId,
-                                                )] ??
-                                                const [],
-                                            onCellTap: (x, y, cell) {
-                                              currentSelectedCell = cell;
-                                              _showBookingPopup(cell);
-                                            },
-                                          ),
-                                        ),
-                                      )
-                                    : const SizedBox.shrink(),
-                              ),
+                              // ใหม่ (ใช้ helper)
+                              child: (expandedFloor == floor)
+                                  ? Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 1,
+                                      ),
+                                      child: _mapOrShrink(floor),
+                                    )
+                                  : const SizedBox.shrink(),
                             ),
                           ],
                         ),

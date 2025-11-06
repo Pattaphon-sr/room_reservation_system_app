@@ -67,179 +67,6 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
     }
   }
 
-  /// ---- Mock data (ตัวอย่าง) รวม July–Nov 2025 ----
-  // final List<ActivityItem> _items = [
-  //   // ---------- November 2025 ----------
-  //   ActivityItem(
-  //     status: ApprovalStatus.pending,
-  //     floor: 'Floor2',
-  //     roomCode: 'R201',
-  //     slot: '09:00-11:00',
-  //     dateTime: DateTime(2025, 11, 5, 9, 15),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor1',
-  //     roomCode: 'R101',
-  //     slot: '13:00-15:00',
-  //     dateTime: DateTime(2025, 11, 2, 13, 30),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.rejected,
-  //     floor: 'Floor4',
-  //     roomCode: 'R405',
-  //     slot: '10:00-12:00',
-  //     dateTime: DateTime(2025, 11, 1, 10, 45),
-  //     note: 'Room renovation in progress',
-  //   ),
-
-  //   // ---------- October 2025 ----------
-  //   ActivityItem(
-  //     status: ApprovalStatus.pending,
-  //     floor: 'Floor5',
-  //     roomCode: 'R501',
-  //     slot: '08:00-10:00',
-  //     dateTime: DateTime(2025, 10, 22, 7, 48),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.pending,
-  //     floor: 'Floor4',
-  //     roomCode: 'R402',
-  //     slot: '10:00-12:00',
-  //     dateTime: DateTime(2025, 10, 21, 9, 20),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.pending,
-  //     floor: 'Floor3',
-  //     roomCode: 'R303',
-  //     slot: '13:00-15:00',
-  //     dateTime: DateTime(2025, 10, 20, 14, 10),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor5',
-  //     roomCode: 'R501',
-  //     slot: '08:00-10:00',
-  //     dateTime: DateTime(2025, 10, 19, 7, 56),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor5',
-  //     roomCode: 'R503',
-  //     slot: '08:00-10:00',
-  //     dateTime: DateTime(2025, 10, 18, 8, 10),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.rejected,
-  //     floor: 'Floor3',
-  //     roomCode: 'R304',
-  //     slot: '10:00-12:00',
-  //     dateTime: DateTime(2025, 10, 17, 10, 48),
-  //     note: 'The ceiling collapsed',
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor5',
-  //     roomCode: 'R505',
-  //     slot: '09:00-11:00',
-  //     dateTime: DateTime(2025, 10, 16, 9, 12),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor4',
-  //     roomCode: 'R402',
-  //     slot: '13:00-15:00',
-  //     dateTime: DateTime(2025, 10, 15, 13, 45),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.rejected,
-  //     floor: 'Floor3',
-  //     roomCode: 'R307',
-  //     slot: '10:00-12:00',
-  //     dateTime: DateTime(2025, 10, 14, 10, 33),
-  //     note: 'Room under maintenance',
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor3',
-  //     roomCode: 'R306',
-  //     slot: '14:00-16:00',
-  //     dateTime: DateTime(2025, 10, 13, 14, 55),
-  //   ),
-
-  //   // ---------- September 2025 ----------
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor5',
-  //     roomCode: 'R501',
-  //     slot: '08:00-10:00',
-  //     dateTime: DateTime(2025, 9, 27, 7, 39),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor4',
-  //     roomCode: 'R408',
-  //     slot: '10:00-12:00',
-  //     dateTime: DateTime(2025, 9, 13, 10, 48),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.rejected,
-  //     floor: 'Floor4',
-  //     roomCode: 'R407',
-  //     slot: '09:00-11:00',
-  //     dateTime: DateTime(2025, 9, 5, 9, 12),
-  //     note: 'Room under maintenance',
-  //   ),
-
-  //   // ---------- August 2025 ----------
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor5',
-  //     roomCode: 'R502',
-  //     slot: '08:00-10:00',
-  //     dateTime: DateTime(2025, 8, 15, 7, 45),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.rejected,
-  //     floor: 'Floor3',
-  //     roomCode: 'R305',
-  //     slot: '13:00-15:00',
-  //     dateTime: DateTime(2025, 8, 9, 13, 00),
-  //     note: 'Air conditioning failure',
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.pending,
-  //     floor: 'Floor2',
-  //     roomCode: 'R204',
-  //     slot: '09:00-11:00',
-  //     dateTime: DateTime(2025, 8, 3, 9, 20),
-  //   ),
-
-  //   // ---------- July 2025 ----------
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor5',
-  //     roomCode: 'R504',
-  //     slot: '08:00-10:00',
-  //     dateTime: DateTime(2025, 7, 25, 8, 00),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.pending,
-  //     floor: 'Floor4',
-  //     roomCode: 'R401',
-  //     slot: '10:00-12:00',
-  //     dateTime: DateTime(2025, 7, 20, 10, 15),
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.rejected,
-  //     floor: 'Floor2',
-  //     roomCode: 'R203',
-  //     slot: '14:00-16:00',
-  //     dateTime: DateTime(2025, 7, 10, 14, 10),
-  //     note: 'Ceiling maintenance',
-  //   ),
-  // ];
-
   /// ============ Group by Month-Year (เก่า → ใหม่) ============
   List<MapEntry<String, List<ActivityItem>>> _groupByMonth(
     List<ActivityItem> items,
@@ -277,37 +104,6 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
       'December',
     ];
     return '${months[dt.month - 1]} ${dt.year}';
-  }
-
-  /// ===== สร้าง Section รายเดือน (ใช้ซ้ำในแต่ละแท็บ) =====
-  List<Widget> _buildSectionByMonth({
-    required String sectionTitle,
-    required List<ActivityItem> items,
-    Color? titleColor,
-  }) {
-    const monthTopGap = 24.0;
-    const monthBottomGap = 12.0;
-    final out = <Widget>[];
-
-    out.add(_SectionHeader(title: sectionTitle, color: titleColor));
-    out.add(const SizedBox(height: 10));
-
-    if (items.isEmpty) {
-      return out; // ✅ ไม่แสดง "No data"
-    }
-
-    for (var i = 0; i < items.length; i++) {
-      out.add(_ActivityTile(item: items[i]));
-      if (i != items.length - 1) {
-        out.add(
-          const Divider(height: 22, thickness: 0.9, color: Color(0xFFE1E6EB)),
-        );
-      }
-    }
-
-    out.add(const SizedBox(height: monthBottomGap));
-    out.add(const SizedBox(height: monthTopGap));
-    return out;
   }
 
   @override
@@ -390,28 +186,6 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
 
     final groups = _groupByMonth(filtered);
 
-    if (groups.isEmpty) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF121212),
-        body: Stack(
-          children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: AppColors.primaryGradient5C,
-                ),
-              ),
-            ),
-            const Center(
-              child: Text('No data', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       body: Stack(
@@ -429,6 +203,7 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
           SafeArea(
             child: DefaultTabController(
               length: groups.length,
+              initialIndex: (groups.length - 1 < 0) ? 0 : groups.length - 1,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -552,69 +327,76 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
                           ),
                         ],
                       ),
-                      child: TabBarView(
-                        children: [
-                          for (final g in groups)
-                            // ✅ เพิ่ม RefreshIndicator
-                            RefreshIndicator(
-                              onRefresh: _loadHistory,
-                              child: ListView(
-                                padding: const EdgeInsets.fromLTRB(
-                                  20,
-                                  20,
-                                  20,
-                                  28,
-                                ),
-                                children: () {
-                                  final monthItems = g.value;
+                      child: (groups.isEmpty)
+                          ? Center(child: _Empty(text: 'No history found.'))
+                          : TabBarView(
+                              children: [
+                                for (final g in groups)
+                                  // ✅ เพิ่ม RefreshIndicator
+                                  RefreshIndicator(
+                                    onRefresh: _loadHistory,
+                                    child: ListView(
+                                      padding: const EdgeInsets.fromLTRB(
+                                        20,
+                                        20,
+                                        20,
+                                        28,
+                                      ),
+                                      children: () {
+                                        final monthItems = g.value;
 
-                                  final done =
-                                      monthItems
-                                          .where(
-                                            (e) =>
-                                                e.status !=
-                                                ApprovalStatus.pending,
-                                          )
-                                          .toList()
-                                        ..sort(
-                                          (a, b) =>
-                                              b.dateTime.compareTo(a.dateTime),
-                                        );
+                                        final done =
+                                            monthItems
+                                                .where(
+                                                  (e) =>
+                                                      e.status !=
+                                                      ApprovalStatus.pending,
+                                                )
+                                                .toList()
+                                              ..sort(
+                                                (a, b) => b.dateTime.compareTo(
+                                                  a.dateTime,
+                                                ),
+                                              );
 
-                                  return [
-                                    // const SizedBox(height: 24),
-                                    // const Divider(height: 0, thickness: 0.8, color: Color(0xFFE1E6EB)),
-                                    // const SizedBox(height: 18),
+                                        return [
+                                          // const SizedBox(height: 24),
+                                          // const Divider(height: 0, thickness: 0.8, color: Color(0xFFE1E6EB)),
+                                          // const SizedBox(height: 18),
 
-                                    // _SectionHeader(title: 'Done'),
-                                    // const SizedBox(height: 10),
-                                    if (done.isNotEmpty)
-                                      ...() {
-                                        final widgets = <Widget>[];
-                                        for (var i = 0; i < done.length; i++) {
-                                          widgets.add(
-                                            _ActivityTile(item: done[i]),
-                                          );
-                                          if (i != done.length - 1) {
-                                            widgets.add(
-                                              const Divider(
-                                                height: 22,
-                                                thickness: 0.9,
-                                                color: Color(0xFFE1E6EB),
-                                              ),
-                                            );
-                                          }
-                                        }
-                                        return widgets;
+                                          // _SectionHeader(title: 'Done'),
+                                          // const SizedBox(height: 10),
+                                          if (done.isNotEmpty)
+                                            ...() {
+                                              final widgets = <Widget>[];
+                                              for (
+                                                var i = 0;
+                                                i < done.length;
+                                                i++
+                                              ) {
+                                                widgets.add(
+                                                  _ActivityTile(item: done[i]),
+                                                );
+                                                if (i != done.length - 1) {
+                                                  widgets.add(
+                                                    const Divider(
+                                                      height: 22,
+                                                      thickness: 0.9,
+                                                      color: Color(0xFFE1E6EB),
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                              return widgets;
+                                            }(),
+
+                                          const SizedBox(height: 12),
+                                        ];
                                       }(),
-
-                                    const SizedBox(height: 12),
-                                  ];
-                                }(),
-                              ),
+                                    ),
+                                  ),
+                              ],
                             ),
-                        ],
-                      ),
                     ),
                   ),
                 ],
