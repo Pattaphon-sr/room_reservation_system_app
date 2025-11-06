@@ -477,7 +477,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => UserRoot.goTo(context, 2),
+                    onTap: () => UserRoot.goTo(context, 1),
                     child: Text(
                       "See All",
                       style: TextStyle(
