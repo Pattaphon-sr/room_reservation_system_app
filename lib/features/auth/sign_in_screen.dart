@@ -15,6 +15,7 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
+  final _formKey = GlobalKey<FormState>();
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   bool loading = false;
@@ -28,6 +29,11 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   Future<void> _doLogin() async {
+    // ถ้ายังกรอกไม่ครบ / ไม่ผ่าน validator → แจ้งเตือนและไม่ไปต่อ
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
     setState(() {
       loading = true;
     });
@@ -139,102 +145,123 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 42),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SizedBox(height: 40),
-                            // Spacer(),
-                            TextField(
-                              controller: emailCtrl,
-                              keyboardType: TextInputType.emailAddress,
-                              textInputAction: TextInputAction.next,
-                              decoration: InputDecoration(
-                                labelStyle: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                floatingLabelStyle: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                hintStyle: TextStyle(color: Colors.grey[500]),
-                                labelText: 'Gmail',
-                                hintText: 'user@gmail.com',
-                              ),
-                            ),
-                            SizedBox(height: 14),
-                            TextField(
-                              controller: passCtrl,
-                              keyboardType: TextInputType.visiblePassword,
-                              obscureText: _obscure,
-                              textInputAction: TextInputAction.next,
-                              decoration: InputDecoration(
-                                labelStyle: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                floatingLabelStyle: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                hintStyle: TextStyle(color: Colors.grey[500]),
-                                labelText: 'Password',
-                                hintText: 'your password',
-                                suffixIcon: IconButton(
-                                  // <- ปุ่มสลับโชว์/ซ่อน
-                                  onPressed: () =>
-                                      setState(() => _obscure = !_obscure),
-                                  icon: Icon(
-                                    _obscure
-                                        ? Icons.visibility_off_rounded
-                                        : Icons.visibility_rounded,
-                                    color: const Color(0xFF0F828C),
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Spacer(flex: 2),
-                            AppButton.solid(
-                              label: loading ? 'SIGNING IN...' : 'SIGN IN',
-                              onPressed: loading ? null : _doLogin,
-                            ),
-                            Spacer(flex: 3),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Don’t have account?',
-                                  style: TextStyle(
-                                    color: Colors.grey[500],
+                        child: Form(
+                          key: _formKey,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SizedBox(height: 40),
+                              // Spacer(),
+                              TextFormField(
+                                controller: emailCtrl,
+                                keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelStyle: TextStyle(
                                     fontWeight: FontWeight.w500,
+                                    color: Color(0xFF0F828C),
                                   ),
+                                  floatingLabelStyle: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF0F828C),
+                                  ),
+                                  hintStyle: TextStyle(color: Colors.grey[500]),
+                                  labelText: 'Gmail',
+                                  hintText: 'user@gmail.com',
                                 ),
-                                SizedBox(width: 12),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const SignUpScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text(
-                                    'Sign up',
-                                    style: TextStyle(
-                                      color: Color(0xFF0F828C),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
+                                validator: (v) {
+                                  final text = v?.trim() ?? '';
+                                  if (text.isEmpty)
+                                    return 'Please enter your email.';
+                                  if (text.contains('@')) {
+                                    final emailOk = RegExp(
+                                      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
+                                    ).hasMatch(text);
+                                    if (!emailOk) return 'Invalid email format';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              SizedBox(height: 14),
+                              TextFormField(
+                                controller: passCtrl,
+                                keyboardType: TextInputType.visiblePassword,
+                                obscureText: _obscure,
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelStyle: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF0F828C),
+                                  ),
+                                  floatingLabelStyle: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF0F828C),
+                                  ),
+                                  hintStyle: TextStyle(color: Colors.grey[500]),
+                                  labelText: 'Password',
+                                  hintText: 'your password',
+                                  suffixIcon: IconButton(
+                                    // <- ปุ่มสลับโชว์/ซ่อน
+                                    onPressed: () =>
+                                        setState(() => _obscure = !_obscure),
+                                    icon: Icon(
+                                      _obscure
+                                          ? Icons.visibility_off_rounded
+                                          : Icons.visibility_rounded,
+                                      color: const Color(0xFF0F828C),
+                                      size: 22,
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                            SizedBox(height: 44),
-                          ],
+                                validator: (v) {
+                                  if ((v ?? '').isEmpty)
+                                    return 'Please enter your password.';
+                                  return null;
+                                },
+                              ),
+                              Spacer(flex: 2),
+                              AppButton.solid(
+                                label: loading ? 'SIGNING IN...' : 'SIGN IN',
+                                onPressed: loading ? null : _doLogin,
+                              ),
+                              Spacer(flex: 3),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Don’t have account?',
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const SignUpScreen(),
+                                        ),
+                                      );
+                                    },
+                                    child: const Text(
+                                      'Sign up',
+                                      style: TextStyle(
+                                        color: Color(0xFF0F828C),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 44),
+                            ],
+                          ),
                         ),
                       ),
                     ),
