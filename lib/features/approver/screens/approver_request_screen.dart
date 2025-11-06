@@ -304,12 +304,12 @@ class _ApproverRequestScreenState extends State<ApproverRequestScreen> {
             TextField(
               controller: reasonController,
               maxLines: 3,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.black54),
               decoration: InputDecoration(
                 hintText: 'Comment...',
-                hintStyle: const TextStyle(color: Colors.white54),
+                hintStyle: const TextStyle(color: Colors.black54),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.15),
+                fillColor: Colors.white.withOpacity(0.80),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: Colors.white54),
