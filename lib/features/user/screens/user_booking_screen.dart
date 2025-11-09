@@ -7,6 +7,7 @@ import 'package:room_reservation_system_app/shared/widgets/maps/map_types.dart';
 import 'package:room_reservation_system_app/features/cells/data/cells_api.dart';
 import 'package:room_reservation_system_app/services/requestservices.dart';
 import 'package:room_reservation_system_app/services/auth_service.dart';
+import 'package:room_reservation_system_app/services/booking_state_service.dart';
 
 class UserBookingScreen extends StatefulWidget {
   const UserBookingScreen({super.key});
@@ -139,15 +140,38 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
   static const _kAnimDur = Duration(milliseconds: 260);
   static const _kAnimCurve = Curves.easeOutCubic;
 
-  @override
+void _onFloorRequested() {
+    final int? requestedFloor = BookingStateService.instance.consumeInitialFloor();
+    
+    if (requestedFloor != null) {
+      if (expandedFloor != requestedFloor) {
+        setState(() {
+          expandedFloor = requestedFloor;
+        });
+      }
+      _ensureCellsLoaded(requestedFloor, _selectedSlotId, force: true);
+    }
+  }
+
+
+@override
   void initState() {
     super.initState();
+
+    BookingStateService.instance.initialFloorNotifier.addListener(_onFloorRequested);
+
     // initial slot = ตามเวลาปัจจุบัน (เช่น 10:51 -> S2)
     _selectedSlotId = _resolveSlotIdForNow(DateTime.now());
     // prefetch แต่ละชั้นที่มี (3,4,5) สำหรับ slot ปัจจุบัน
     for (final f in [3, 4, 5]) {
       _ensureCellsLoaded(f, _selectedSlotId);
     }
+  }
+
+  @override
+  void dispose() {
+    BookingStateService.instance.initialFloorNotifier.removeListener(_onFloorRequested);
+    super.dispose();
   }
 
   @override

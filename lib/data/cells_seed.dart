@@ -24,7 +24,6 @@ class _BaseCell {
     required this.x,
     required this.y,
     required this.type,
-    this.roomNo,
     required this.baseStatus,
   });
 }
