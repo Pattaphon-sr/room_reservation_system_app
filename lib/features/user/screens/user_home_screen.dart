@@ -25,7 +25,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   Timer? _timer;
-  bool _refreshing = false; // กันเรียกซ้อน
+  bool _refreshing = false;
 
   final List<Map<String, dynamic>> floorData = const [
     {
@@ -51,7 +51,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchData(initial: true); // โหลดรอบแรกแบบมี spinner
+    _fetchData(initial: true); 
     _timer = Timer.periodic(const Duration(seconds: 3), (_) => _tickRefresh());
   }
 
@@ -64,7 +64,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   Future<void> _fetchData({bool initial = false}) async {
     await _fetchDashboardSummary(
       silent: !initial,
-    ); // รอบแรกไม่ silent เพื่อโชว์ spinner
+    );
     await _fetchDailyReservation();
   }
 
@@ -73,8 +73,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     _refreshing = true;
     try {
       await Future.wait([
-        _fetchDashboardSummary(silent: true), // ไม่โชว์ spinner
-        _fetchDailyReservation(), // ปล่อยให้อัปเดต panel รายวัน
+        _fetchDashboardSummary(silent: true),
+        _fetchDailyReservation(), 
       ]);
     } finally {
       _refreshing = false;
@@ -94,7 +94,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       final List rawList =
           (data['available_by_floor_slot'] as List?) ?? const [];
 
-      // group ให้ได้ time,f3,f4,f5
       final grouped = <String, Map<String, dynamic>>{};
       for (final item in rawList) {
         final m = (item as Map).cast<String, dynamic>();
@@ -120,7 +119,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        // โหมด silent ไม่ต้องรบกวน UI ที่มีอยู่ (ไม่เคลียร์ data/ไม่เปิด spinner)
         if (!silent) {
           _errorMessage = 'Unable to connect to server';
           _availabilityData = [];

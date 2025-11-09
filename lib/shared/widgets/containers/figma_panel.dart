@@ -132,8 +132,9 @@ class _ShadowPainter extends CustomPainter {
     final s = shadow;
     if (s == null ||
         (s.color == null && s.gradient == null) ||
-        s.blurSigma <= 0)
+        s.blurSigma <= 0) {
       return;
+    }
 
     final baseRect = Offset.zero & size;
     final innerR = RRect.fromRectAndRadius(baseRect, Radius.circular(radius));

@@ -41,7 +41,7 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
   final Map<String, List<Map<String, dynamic>>> _cellsCache = {};
   final Set<String> _loadingKeys = {};
   final Map<String, DateTime> _cellsFetchedAt = {};
-  Duration _staleAfter = const Duration(seconds: 10);
+  final Duration _staleAfter = const Duration(seconds: 10);
 
   String _key(int floor, String slotId) => '$floor-$slotId';
 

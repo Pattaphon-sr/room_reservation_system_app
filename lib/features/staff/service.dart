@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/staff_history_screen.dart';
 
 class StaffHistoryService {
-  final String baseUrl = '${Env.baseUrl}';
+  final String baseUrl = Env.baseUrl;
 
   Future<List<ActivityItem>> fetchHistory() async {
     try {

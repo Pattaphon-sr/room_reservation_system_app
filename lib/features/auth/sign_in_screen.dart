@@ -173,8 +173,9 @@ class _SignInScreenState extends State<SignInScreen> {
                                 ),
                                 validator: (v) {
                                   final text = v?.trim() ?? '';
-                                  if (text.isEmpty)
+                                  if (text.isEmpty) {
                                     return 'Please enter your email.';
+                                  }
                                   if (text.contains('@')) {
                                     final emailOk = RegExp(
                                       r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
@@ -217,8 +218,9 @@ class _SignInScreenState extends State<SignInScreen> {
                                   ),
                                 ),
                                 validator: (v) {
-                                  if ((v ?? '').isEmpty)
+                                  if ((v ?? '').isEmpty) {
                                     return 'Please enter your password.';
+                                  }
                                   return null;
                                 },
                               ),

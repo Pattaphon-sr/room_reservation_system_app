@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
@@ -17,6 +18,10 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
 
   Map<String, dynamic>? overallSummary;
   List<Map<String, dynamic>> floorSummary = [];
+  List<Map<String, dynamic>> availableByFloorSlot = [];
+
+  Timer? _refreshTimer;
+  bool _isLoading = false;
 
   final List<Map<String, dynamic>> floorData = const [
     {
@@ -38,26 +43,61 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
       'panel': PanelPresets.pink,
     },
   ];
-  
+
   @override
   void initState() {
     super.initState();
     fetchDashboard();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (!_isLoading) {
+        fetchDashboard();
+      }
+    });
   }
 
   Future<void> fetchDashboard() async {
+    if (_isLoading) return;
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final data = await _dashboardApi.getDashboard();
-      setState(() {
-        overallSummary = (data['overall_summary'] as Map?)
-            ?.cast<String, dynamic>();
-        floorSummary = ((data['floor_summary'] as List?) ?? const [])
-            .map((e) => (e as Map).cast<String, dynamic>())
-            .toList();
-      });
+
+      if (mounted) {
+        setState(() {
+          overallSummary = (data['overall_summary'] as Map?)
+              ?.cast<String, dynamic>();
+
+          floorSummary = ((data['floor_summary'] as List?) ?? const [])
+              .map((e) => (e as Map).cast<String, dynamic>())
+              .toList();
+
+          availableByFloorSlot =
+              ((data['available_by_floor_slot'] as List?) ?? const [])
+                  .map((e) => (e as Map).cast<String, dynamic>())
+                  .toList();
+        });
+      }
     } catch (e) {
       debugPrint('Error fetching dashboard: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Widget _buildStatCard(Color color, String count, String label) {
@@ -101,9 +141,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
     );
   }
 
-  Widget _buildFloorCard(
-    Map<String, dynamic> floor,
-  ) {
+  Widget _buildFloorCard(Map<String, dynamic> floor) {
     final String title = floor['title'] as String;
     final String imageAsset = floor['asset'] as String;
     final panelBuilder =
@@ -113,7 +151,7 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
               required double height,
               required Widget child,
             });
-    final int floorId = floor['id'] as int; 
+    final int floorId = floor['id'] as int;
 
     return GestureDetector(
       onTap: () {
@@ -251,6 +289,26 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
   Widget build(BuildContext context) {
     final reversedFloorData = floorData.reversed.toList();
 
+    final int totalFreeSlots = availableByFloorSlot.fold(
+      0,
+      (sum, slot) =>
+          sum + (int.tryParse(slot['available_rooms']?.toString() ?? '0') ?? 0),
+    );
+
+    final int totalPendingSlots = availableByFloorSlot.fold(
+      0,
+      (sum, slot) =>
+          sum + (int.tryParse(slot['pending_rooms']?.toString() ?? '0') ?? 0),
+    );
+
+    final int totalBookedSlots = availableByFloorSlot.fold(
+      0,
+      (sum, slot) =>
+          sum + (int.tryParse(slot['booked_rooms']?.toString() ?? '0') ?? 0),
+    );
+
+    final String totalDisabled = overallSummary?['disabled']?.toString() ?? '0';
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Container(
@@ -282,22 +340,22 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                 children: [
                   _buildStatCard(
                     AppColors.success,
-                    overallSummary?['free']?.toString() ?? '0',
+                    totalFreeSlots.toString(),
                     'Free slots',
                   ),
                   _buildStatCard(
                     AppColors.warning,
-                    overallSummary?['pending']?.toString() ?? '0',
+                    totalPendingSlots.toString(),
                     'Pending slots',
                   ),
                   _buildStatCard(
                     AppColors.primary,
-                    overallSummary?['booked']?.toString() ?? '0',
+                    totalBookedSlots.toString(),
                     'Booked Slots',
                   ),
                   _buildStatCard(
                     AppColors.danger,
-                    overallSummary?['disabled']?.toString() ?? '0',
+                    totalDisabled,
                     'Disabled rooms',
                   ),
                 ],
@@ -347,31 +405,49 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                 ],
               ),
               const SizedBox(height: 35),
+
               for (var i = 0; i < reversedFloorData.length; i++) ...[
                 Builder(
                   builder: (context) {
-                    final floorData =
-                        reversedFloorData[i]; // ใช้ข้อมูลที่กลับลำดับแล้ว
+                    final floorData = reversedFloorData[i];
                     final floorTitle = floorData['title'] as String;
                     final floorNumber = int.tryParse(
                       floorTitle.replaceAll('Floor ', ''),
                     );
 
-                    // ค้นหาข้อมูลสรุปที่ตรงกับหมายเลขชั้น
-                    final floorInfo = floorSummary.firstWhere(
-                      (f) => f['floor'] == floorNumber,
-                      orElse: () => {
-                        'free': 0,
-                        'pending': 0,
-                        'booked': 0,
-                        'disabled': 0,
-                      },
+                    final Map<String, dynamic> floorInfo = floorSummary
+                        .firstWhere(
+                          (f) => f['floor'] == floorNumber,
+                          orElse: () => {
+                            'free': 0,
+                            'pending': 0,
+                            'booked': 0,
+                            'disabled': 0,
+                          },
+                        );
+
+                    final int timeAdjustedFreeSlots = availableByFloorSlot
+                        .where((slot) => slot['floor'] == floorNumber)
+                        .fold(
+                          0,
+                          (sum, slot) =>
+                              sum +
+                              (int.tryParse(
+                                    slot['available_rooms']?.toString() ?? '0',
+                                  ) ??
+                                  0),
+                        );
+
+                    final Map<String, dynamic> displayFloorInfo = Map.from(
+                      floorInfo,
                     );
+
+                    displayFloorInfo['free'] = timeAdjustedFreeSlots;
 
                     return _buildFloorPanel(
                       floorData['title'] as String,
                       floorData['asset'] as String,
-                      floorInfo,
+                      displayFloorInfo,
                       floorData['panel']
                           as Widget Function({
                             required double width,
@@ -383,7 +459,6 @@ class _StaffHomeScreenState extends State<StaffHomeScreen> {
                 ),
                 const SizedBox(height: 12),
               ],
-              // -------------------------------------------------------------------
             ],
           ),
         ),

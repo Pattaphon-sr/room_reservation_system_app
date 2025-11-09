@@ -38,7 +38,7 @@ class PendingReservation {
 }
 
 class ApproverHistoryService {
-  final String baseUrl = '${Env.baseUrl}';
+  final String baseUrl = Env.baseUrl;
 
   // ==================== HISTORY ====================
 
