@@ -140,52 +140,8 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // เพิ่มการตรวจสอบ loading และ error ที่ต้นฟังก์ชัน
-    if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF121212),
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
-      );
-    }
-
-    if (_errorMessage != null) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF121212),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 64),
-                const SizedBox(height: 16),
-                Text(
-                  'Error: $_errorMessage',
-                  style: const TextStyle(color: Colors.white),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: _loadHistory,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
     final query = _search.text.trim().toLowerCase();
 
-    // ค้นหาในทุกฟิลด์ที่เกี่ยวข้อง
     final filtered = connectedApiItems.where((e) {
       if (query.isEmpty) return true;
       final hay =
@@ -195,24 +151,12 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
       return hay.contains(query);
     }).toList();
 
-    // กลุ่มเดือนสำหรับ “แท็บ” — เก่า → ใหม่ (เช่น Sep | Oct | Nov)
     final tabGroups = _groupByMonthAsc(filtered);
-
-    // ถ้าไม่มีข้อมูลเลย
-    if (tabGroups.isEmpty) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF121212),
-        body: Center(
-          child: Text('No history found', style: TextStyle(color: Colors.white)),
-        ),
-      );
-    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       body: Stack(
         children: [
-          // พื้นหลัง gradient หลัก
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -222,11 +166,9 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
               ),
             ),
           ),
-
-          // เนื้อหา + TabBar
           SafeArea(
             child: DefaultTabController(
-              length: tabGroups.length,
+              length: tabGroups.isEmpty ? 1 : tabGroups.length,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -352,23 +294,58 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
                         ],
                       ),
                       child: TabBarView(
-                        children: [
-                          for (final g in tabGroups)
-                            RefreshIndicator(
-                              onRefresh: _loadHistory,
-                              color: Colors.blue,
-                              child: ListView(
-                                padding: const EdgeInsets.fromLTRB(
-                                  20,
-                                  20,
-                                  20,
-                                  28,
+                        children: tabGroups.isEmpty
+                          ? [
+                              Center(
+                                child: Text(
+                                  'No history found',
+                                  style: TextStyle(color: Colors.black54, fontSize: 18),
                                 ),
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                children: _buildOneMonthTabBody(g.value),
                               ),
-                            ),
-                        ],
+                            ]
+                          : [
+                              for (final g in tabGroups)
+                                RefreshIndicator(
+                                  onRefresh: _loadHistory,
+                                  color: Colors.blue,
+                                  child: _isLoading
+                                    ? Center(child: CircularProgressIndicator())
+                                    : _errorMessage != null
+                                      ? Center(
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(24.0),
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                                                const SizedBox(height: 16),
+                                                Text(
+                                                  'Error: $_errorMessage',
+                                                  style: const TextStyle(color: Colors.red),
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                                const SizedBox(height: 24),
+                                                ElevatedButton.icon(
+                                                  onPressed: _loadHistory,
+                                                  icon: const Icon(Icons.refresh),
+                                                  label: const Text('Retry'),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        )
+                                      : ListView(
+                                          padding: const EdgeInsets.fromLTRB(
+                                            20,
+                                            20,
+                                            20,
+                                            28,
+                                          ),
+                                          physics: const AlwaysScrollableScrollPhysics(),
+                                          children: _buildOneMonthTabBody(g.value),
+                                        ),
+                                ),
+                            ],
                       ),
                     ),
                   ),
