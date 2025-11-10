@@ -11,6 +11,8 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
+  // เพิ่ม GlobalKey สำหรับ Form
+  final _formKey = GlobalKey<FormState>();
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
   final nameCtrl = TextEditingController();
@@ -25,6 +27,42 @@ class _SignUpScreenState extends State<SignUpScreen> {
     nameCtrl.dispose();
     pass2Ctrl.dispose();
     super.dispose();
+  }
+
+  // ฟังก์ชันสำหรับ Sign Up
+  Future<void> _doSignUp() async {
+    // ตรวจสอบความถูกต้องของข้อมูลใน Form
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return; // ถ้าไม่ถูกต้อง, ไม่ทำต่อ
+    }
+
+    // ถ้าข้อมูลถูกต้อง, ดำเนินการต่อ
+    final email = emailCtrl.text.trim();
+    final username = nameCtrl.text.trim();
+    final pass = passCtrl.text;
+
+    final err = await AuthService.instance.signup(
+      email: email,
+      username: username,
+      password: pass,
+    );
+    if (!mounted) return;
+    if (err == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Signup successful. Please sign in.',
+          ),
+        ),
+      );
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SignInScreen(),
+      ),
+    );
   }
 
   @override
@@ -90,213 +128,193 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 42),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SizedBox(height: 40),
-                            // Spacer(),
-                            TextField(
-                              controller: emailCtrl,
-                              keyboardType: TextInputType.emailAddress,
-                              textInputAction: TextInputAction.next,
-                              decoration: InputDecoration(
-                                labelStyle: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                floatingLabelStyle: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                hintStyle: TextStyle(color: Colors.grey[500]),
-                                labelText: 'Gmail',
-                                hintText: 'user@gmail.com',
-                              ),
-                            ),
-                            SizedBox(height: 14),
-                            TextField(
-                              controller: nameCtrl,
-                              textInputAction: TextInputAction.next,
-                              decoration: InputDecoration(
-                                labelStyle: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                floatingLabelStyle: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                hintStyle: TextStyle(color: Colors.grey[500]),
-                                labelText: 'Username',
-                                hintText: 'username',
-                              ),
-                            ),
-                            SizedBox(height: 14),
-                            TextField(
-                              controller: passCtrl,
-                              textInputAction: TextInputAction.next,
-                              keyboardType: TextInputType.visiblePassword,
-                              obscureText: _obscure,
-                              decoration: InputDecoration(
-                                labelStyle: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                floatingLabelStyle: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                hintStyle: TextStyle(color: Colors.grey[500]),
-                                labelText: 'Password',
-                                hintText: 'your password',
-                                suffixIcon: IconButton(
-                                  // <- ปุ่มสลับโชว์/ซ่อน
-                                  onPressed: () =>
-                                      setState(() => _obscure = !_obscure),
-                                  icon: Icon(
-                                    _obscure
-                                        ? Icons.visibility_off_rounded
-                                        : Icons.visibility_rounded,
-                                    color: const Color(0xFF0F828C),
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 14),
-                            TextField(
-                              controller: pass2Ctrl,
-                              textInputAction: TextInputAction.done,
-                              keyboardType: TextInputType.visiblePassword,
-                              obscureText: _obscure2,
-                              decoration: InputDecoration(
-                                labelStyle: TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                floatingLabelStyle: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0F828C),
-                                ),
-                                hintStyle: TextStyle(color: Colors.grey[500]),
-                                labelText: 'Confirm Password',
-                                hintText: 'your password',
-                                suffixIcon: IconButton(
-                                  // <- ปุ่มสลับโชว์/ซ่อน
-                                  onPressed: () =>
-                                      setState(() => _obscure2 = !_obscure2),
-                                  icon: Icon(
-                                    _obscure2
-                                        ? Icons.visibility_off_rounded
-                                        : Icons.visibility_rounded,
-                                    color: const Color(0xFF0F828C),
-                                    size: 22,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Spacer(flex: 2),
-                            AppButton.solid(
-                              label: 'SIGN UP',
-                              onPressed: () async {
-                                final email = emailCtrl.text.trim();
-                                final username = nameCtrl.text.trim();
-                                final pass = passCtrl.text;
-                                final pass2 = pass2Ctrl.text;
-
-                                if (email.isEmpty ||
-                                    username.isEmpty ||
-                                    pass.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Please fill all fields'),
-                                    ),
-                                  );
-                                  return;
-                                }
-
-                                if (email.isEmpty ||
-                                    username.isEmpty ||
-                                    pass.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Please fill all fields'),
-                                    ),
-                                  );
-                                  return;
-                                }
-
-                                if (pass != pass2) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Passwords do not match'),
-                                    ),
-                                  );
-                                  return;
-                                }
-
-                                final err = await AuthService.instance.signup(
-                                  email: email,
-                                  username: username,
-                                  password: pass,
-                                );
-                                if (!mounted) return;
-                                if (err == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Signup successful. Please sign in.',
-                                      ),
-                                    ),
-                                  );
-                                }
-
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const SignInScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                            Spacer(flex: 3),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Already have an account?',
-                                  style: TextStyle(
-                                    color: Colors.grey[500],
+                        // เพิ่ม widget Form และกำหนด key
+                        child: Form(
+                          key: _formKey,
+                          // ตั้งค่าให้ validate อัตโนมัติเมื่อผู้ใช้พิมพ์
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              SizedBox(height: 40),
+                              // เปลี่ยนจาก TextField เป็น TextFormField
+                              TextFormField(
+                                controller: emailCtrl,
+                                keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelStyle: TextStyle(
                                     fontWeight: FontWeight.w500,
+                                    color: Color(0xFF0F828C),
                                   ),
+                                  floatingLabelStyle: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF0F828C),
+                                  ),
+                                  hintStyle: TextStyle(color: Colors.grey[500]),
+                                  labelText: 'Gmail',
+                                  hintText: 'user@gmail.com',
                                 ),
-                                SizedBox(width: 12),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const SignInScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text(
-                                    'Sign in',
-                                    style: TextStyle(
-                                      color: Color(0xFF0F828C),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
+                                // เพิ่ม validator
+                                validator: (v) {
+                                  final text = v?.trim() ?? '';
+                                  if (text.isEmpty)
+                                    return 'Please enter your email.';
+                                  // ลบการเช็ค Email format ออก
+                                  return null;
+                                },
+                              ),
+                              SizedBox(height: 14),
+                              // เปลี่ยนจาก TextField เป็น TextFormField
+                              TextFormField(
+                                controller: nameCtrl,
+                                textInputAction: TextInputAction.next,
+                                decoration: InputDecoration(
+                                  labelStyle: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF0F828C),
+                                  ),
+                                  floatingLabelStyle: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF0F828C),
+                                  ),
+                                  hintStyle: TextStyle(color: Colors.grey[500]),
+                                  labelText: 'Username',
+                                  hintText: 'username',
+                                ),
+                                // เพิ่ม validator
+                                validator: (v) {
+                                  if ((v?.trim() ?? '').isEmpty) {
+                                    return 'Please enter your username.';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              SizedBox(height: 14),
+                              // เปลี่ยนจาก TextField เป็น TextFormField
+                              TextFormField(
+                                controller: passCtrl,
+                                textInputAction: TextInputAction.next,
+                                keyboardType: TextInputType.visiblePassword,
+                                obscureText: _obscure,
+                                decoration: InputDecoration(
+                                  labelStyle: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF0F828C),
+                                  ),
+                                  floatingLabelStyle: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF0F828C),
+                                  ),
+                                  hintStyle: TextStyle(color: Colors.grey[500]),
+                                  labelText: 'Password',
+                                  hintText: 'your password',
+                                  suffixIcon: IconButton(
+                                    onPressed: () =>
+                                        setState(() => _obscure = !_obscure),
+                                    icon: Icon(
+                                      _obscure
+                                          ? Icons.visibility_off_rounded
+                                          : Icons.visibility_rounded,
+                                      color: const Color(0xFF0F828C),
+                                      size: 22,
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                            SizedBox(height: 50),
-                          ],
+                                // เพิ่ม validator
+                                validator: (v) {
+                                  if ((v ?? '').isEmpty) {
+                                    return 'Please enter your password.';
+                                  }
+                                  // ลบการเช็คความยาว Password ออก
+                                  return null;
+                                },
+                              ),
+                              SizedBox(height: 14),
+                              // เปลี่ยนจาก TextField เป็น TextFormField
+                              TextFormField(
+                                controller: pass2Ctrl,
+                                textInputAction: TextInputAction.done,
+                                keyboardType: TextInputType.visiblePassword,
+                                obscureText: _obscure2,
+                                decoration: InputDecoration(
+                                  labelStyle: TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF0F828C),
+                                  ),
+                                  floatingLabelStyle: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF0F828C),
+                                  ),
+                                  hintStyle: TextStyle(color: Colors.grey[500]),
+                                  labelText: 'Confirm Password',
+                                  hintText: 'your password',
+                                  suffixIcon: IconButton(
+                                    onPressed: () =>
+                                        setState(() => _obscure2 = !_obscure2),
+                                    icon: Icon(
+                                      _obscure2
+                                          ? Icons.visibility_off_rounded
+                                          : Icons.visibility_rounded,
+                                      color: const Color(0xFF0F828C),
+                                      size: 22,
+                                    ),
+                                  ),
+                                ),
+                                // เพิ่ม validator
+                                validator: (v) {
+                                  if ((v ?? '').isEmpty) {
+                                    return 'Please confirm your password.';
+                                  }
+                                  // ลบการเช็ค Password match ออก
+                                  return null;
+                                },
+                              ),
+                              Spacer(flex: 2),
+                              AppButton.solid(
+                                label: 'SIGN UP',
+                                // เรียกใช้ _doSignUp เมื่อกดปุ่ม
+                                onPressed: _doSignUp,
+                              ),
+                              Spacer(flex: 3),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Already have an account?',
+                                    style: TextStyle(
+                                      color: Colors.grey[500],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const SignInScreen(),
+                                        ),
+                                      );
+                                    },
+                                    child: const Text(
+                                      'Sign in',
+                                      style: TextStyle(
+                                        color: Color(0xFF0F828C),
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 50),
+                            ],
+                          ),
                         ),
                       ),
                     ),
