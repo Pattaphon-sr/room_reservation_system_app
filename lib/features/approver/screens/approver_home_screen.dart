@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
+import 'package:room_reservation_system_app/services/booking_state_service.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/features/approver/root.dart';
 import 'package:room_reservation_system_app/services/dashboard_service.dart';
@@ -18,19 +20,26 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
   Map<String, dynamic>? overallSummary;
   List<Map<String, dynamic>> floorSummary = [];
   List<Map<String, dynamic>> dailyRequests = [];
+  List<Map<String, dynamic>> availableByFloorSlot = [];
+
+  Timer? _refreshTimer;
+  bool _isLoading = false;
 
   final List<Map<String, dynamic>> floorData = const [
     {
+      'id': 3,
       'title': 'Floor 3',
       'asset': 'assets/images/Photoroom_Floor3.png',
       'panel': PanelPresets.sky,
     },
     {
+      'id': 4,
       'title': 'Floor 4',
       'asset': 'assets/images/Photoroom_Floor4.png',
       'panel': PanelPresets.purple,
     },
     {
+      'id': 5,
       'title': 'Floor 5',
       'asset': 'assets/images/Photoroom_Floor5.png',
       'panel': PanelPresets.pink,
@@ -42,21 +51,59 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
     super.initState();
     fetchDashboard();
     fetchDailyRequests();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (!_isLoading) {
+        fetchDashboard();
+      }
+    });
   }
 
   Future<void> fetchDashboard() async {
+    if (_isLoading) return;
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final data = await _dashboardApi.getDashboard();
-      setState(() {
-        overallSummary = (data['overall_summary'] as Map?)
-            ?.cast<String, dynamic>();
-        floorSummary = ((data['floor_summary'] as List?) ?? const [])
-            .map((e) => (e as Map).cast<String, dynamic>())
-            .toList();
-      });
+
+      if (mounted) {
+        setState(() {
+          overallSummary = (data['overall_summary'] as Map?)
+              ?.cast<String, dynamic>();
+
+          floorSummary = ((data['floor_summary'] as List?) ?? const [])
+              .map((e) => (e as Map).cast<String, dynamic>())
+              .toList();
+
+          availableByFloorSlot =
+              ((data['available_by_floor_slot'] as List?) ?? const [])
+                  .map((e) => (e as Map).cast<String, dynamic>())
+                  .toList();
+        });
+      }
     } catch (e) {
       debugPrint('Error fetching dashboard: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Widget _buildStatCard(Color color, String count, String label) {
@@ -109,18 +156,23 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
     }
   }
 
-  Widget _buildFloorCard(
-    String title,
-    String imageAsset,
-    Widget Function({
-      required double width,
-      required double height,
-      required Widget child,
-    })
-    panelBuilder,
-  ) {
+  Widget _buildFloorCard(Map<String, dynamic> floor) {
+    final String title = floor['title'] as String;
+    final String imageAsset = floor['asset'] as String;
+    final panelBuilder =
+        floor['panel']
+            as Widget Function({
+              required double width,
+              required double height,
+              required Widget child,
+            });
+    final int floorId = floor['id'] as int;
+
     return GestureDetector(
-      onTap: () => ApproverRoot.goTo(context, 1),
+      onTap: () {
+        BookingStateService.instance.setInitialFloor(floorId);
+        ApproverRoot.goTo(context, 1);
+      },
       child: panelBuilder(
         width: 80,
         height: 80,
@@ -254,6 +306,27 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final int totalFreeSlots = availableByFloorSlot.fold(
+      0,
+      (sum, slot) =>
+          sum + (int.tryParse(slot['available_rooms']?.toString() ?? '0') ?? 0),
+    );
+
+    final int totalPendingSlots = availableByFloorSlot.fold(
+      0,
+      (sum, slot) =>
+          sum + (int.tryParse(slot['pending_rooms']?.toString() ?? '0') ?? 0),
+    );
+
+    final int totalBookedSlots = availableByFloorSlot.fold(
+      0,
+      (sum, slot) =>
+          sum + (int.tryParse(slot['booked_rooms']?.toString() ?? '0') ?? 0),
+    );
+
+    // Disabled rooms ดึงจาก overallSummary ได้เลย
+    final String totalDisabled = overallSummary?['disabled']?.toString() ?? '0';
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -285,22 +358,22 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
                 children: [
                   _buildStatCard(
                     AppColors.success,
-                    overallSummary?['free']?.toString() ?? '0',
+                    totalFreeSlots.toString(),
                     'Free slots',
                   ),
                   _buildStatCard(
                     AppColors.warning,
-                    overallSummary?['pending']?.toString() ?? '0',
+                    totalPendingSlots.toString(),
                     'Pending slots',
                   ),
                   _buildStatCard(
                     AppColors.primary,
-                    overallSummary?['booked']?.toString() ?? '0',
+                    totalBookedSlots.toString(),
                     'Booked Slots',
                   ),
                   _buildStatCard(
                     AppColors.danger,
-                    overallSummary?['disabled']?.toString() ?? '0',
+                    totalDisabled,
                     'Disabled rooms',
                   ),
                 ],
@@ -336,7 +409,6 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
                 height: 210,
                 child: dailyRequests.isEmpty
                     ? const Padding(
-                        // 1. คง Padding นี้ไว้สำหรับกรณีที่ 'list' ว่าง
                         padding: EdgeInsets.all(16.0),
                         child: Center(
                           child: Text(
@@ -397,16 +469,7 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
                       const SizedBox(width: 12),
                   itemBuilder: (context, index) {
                     final floor = floorData[index];
-                    return _buildFloorCard(
-                      floor['title'] as String,
-                      floor['asset'] as String,
-                      floor['panel']
-                          as Widget Function({
-                            required double width,
-                            required double height,
-                            required Widget child,
-                          }),
-                    );
+                    return _buildFloorCard(floor);
                   },
                 ),
               ),

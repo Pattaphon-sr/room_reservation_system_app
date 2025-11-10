@@ -6,7 +6,7 @@ import 'package:room_reservation_system_app/features/user/screens/user_history_s
 import 'package:room_reservation_system_app/services/auth_service.dart';
 
 class UserHistoryService {
-  final String baseUrl = '${Env.baseUrl}';
+  final String baseUrl = Env.baseUrl;
 
   /// ดึงประวัติการจองของ User (กรองเฉพาะของตัวเอง)
   Future<List<ActivityItem>> fetchHistory() async {

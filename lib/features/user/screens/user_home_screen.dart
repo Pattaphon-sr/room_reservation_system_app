@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
 import 'package:room_reservation_system_app/core/theme/app_colors.dart';
+import 'package:room_reservation_system_app/services/booking_state_service.dart';
 import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
 import 'package:room_reservation_system_app/features/user/root.dart';
 import 'package:room_reservation_system_app/services/auth_service.dart';
@@ -24,20 +25,23 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   bool _isLoading = true;
   String _errorMessage = '';
   Timer? _timer;
-  bool _refreshing = false; // กันเรียกซ้อน
+  bool _refreshing = false;
 
   final List<Map<String, dynamic>> floorData = const [
     {
+      'id': 3,
       'title': 'Floor 3',
       'asset': 'assets/images/Photoroom_Floor3.png',
       'panel': PanelPresets.sky,
     },
     {
+      'id': 4,
       'title': 'Floor 4',
       'asset': 'assets/images/Photoroom_Floor4.png',
       'panel': PanelPresets.purple,
     },
     {
+      'id': 5,
       'title': 'Floor 5',
       'asset': 'assets/images/Photoroom_Floor5.png',
       'panel': PanelPresets.pink,
@@ -47,7 +51,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchData(initial: true); // โหลดรอบแรกแบบมี spinner
+    _fetchData(initial: true); 
     _timer = Timer.periodic(const Duration(seconds: 3), (_) => _tickRefresh());
   }
 
@@ -60,7 +64,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   Future<void> _fetchData({bool initial = false}) async {
     await _fetchDashboardSummary(
       silent: !initial,
-    ); // รอบแรกไม่ silent เพื่อโชว์ spinner
+    );
     await _fetchDailyReservation();
   }
 
@@ -69,8 +73,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     _refreshing = true;
     try {
       await Future.wait([
-        _fetchDashboardSummary(silent: true), // ไม่โชว์ spinner
-        _fetchDailyReservation(), // ปล่อยให้อัปเดต panel รายวัน
+        _fetchDashboardSummary(silent: true),
+        _fetchDailyReservation(), 
       ]);
     } finally {
       _refreshing = false;
@@ -90,7 +94,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       final List rawList =
           (data['available_by_floor_slot'] as List?) ?? const [];
 
-      // group ให้ได้ time,f3,f4,f5
       final grouped = <String, Map<String, dynamic>>{};
       for (final item in rawList) {
         final m = (item as Map).cast<String, dynamic>();
@@ -116,7 +119,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        // โหมด silent ไม่ต้องรบกวน UI ที่มีอยู่ (ไม่เคลียร์ data/ไม่เปิด spinner)
         if (!silent) {
           _errorMessage = 'Unable to connect to server';
           _availabilityData = [];
@@ -127,17 +129,24 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   Widget _buildFloorCard(
-    String title,
-    String imageAsset,
-    Widget Function({
-      required double width,
-      required double height,
-      required Widget child,
-    })
-    panelBuilder,
+    Map<String, dynamic> floor,
   ) {
+    final String title = floor['title'] as String;
+    final String imageAsset = floor['asset'] as String;
+    final panelBuilder =
+        floor['panel']
+            as Widget Function({
+              required double width,
+              required double height,
+              required Widget child,
+            });
+    final int floorId = floor['id'] as int; 
+
     return GestureDetector(
-      onTap: () => UserRoot.goTo(context, 1),
+      onTap: () {
+        BookingStateService.instance.setInitialFloor(floorId);
+        UserRoot.goTo(context, 1);
+      },
       child: panelBuilder(
         width: 80,
         height: 80,
@@ -500,14 +509,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   itemBuilder: (context, index) {
                     final floor = floorData[index];
                     return _buildFloorCard(
-                      floor['title'] as String,
-                      floor['asset'] as String,
-                      floor['panel']
-                          as Widget Function({
-                            required double width,
-                            required double height,
-                            required Widget child,
-                          }),
+                      floor,
                     );
                   },
                 ),
