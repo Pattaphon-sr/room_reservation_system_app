@@ -5,6 +5,8 @@ import 'package:room_reservation_system_app/core/network/api_client.dart';
 class RequestServices {
   final Dio _dio = ApiClient().dio;
 
+  String lastErrorMessage = "";
+
   Future<bool> sendReservationRequest({
     required int cellId,
     required String slotId,
@@ -15,6 +17,9 @@ class RequestServices {
         '/reservations/request',
         data: {"cell_id": cellId, "slot_id": slotId, "requested_by": userId},
       );
+
+      lastErrorMessage = res.data?['message'] ?? "";
+
       if (res.statusCode == 200 || res.statusCode == 201) {
         if (kDebugMode) print("REQ OK => ${res.data}");
         return true;
@@ -22,6 +27,8 @@ class RequestServices {
       if (kDebugMode) print("REQ BAD STATUS => ${res.statusCode} ${res.data}");
       return false;
     } on DioException catch (e) {
+      lastErrorMessage = e.response?.data?['message'] ?? "Server error";
+
       if (kDebugMode) {
         print("REQ ERR => ${e.response?.statusCode} ${e.response?.data}");
       }

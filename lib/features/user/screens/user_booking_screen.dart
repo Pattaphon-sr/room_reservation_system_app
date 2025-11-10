@@ -543,7 +543,9 @@ class _UserBookingScreenPageState extends State<UserBookingScreen>
     final titleText = ok ? 'Request sent' : 'Request failed';
     final subtitleText = ok
         ? 'Your booking request has been\nsent for approval.'
-        : 'Could not create your request.\nPlease try again later.';
+        : (_req.lastErrorMessage.isNotEmpty
+              ? _req.lastErrorMessage
+              : 'Could not create your request.\nPlease try again later.');
     final countdown = ValueNotifier<int>(5);
     Timer? timer;
 
