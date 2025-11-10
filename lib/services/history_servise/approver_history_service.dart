@@ -8,6 +8,7 @@ class ApproverHistoryService {
 
   /// ดึงเฉพาะรายการที่ "ฉัน" เป็นคนอนุมัติ/ปฏิเสธ (approved_by == me)
   /// จะพยายามใช้ username ก่อน ถ้าไม่มีจะ fallback เป็น id
+ // ...existing code...
   Future<List<ApproverHistoryItem>> fetchHistory() async {
     try {
       final payload = AuthService.instance.payload ?? {};
@@ -16,7 +17,11 @@ class ApproverHistoryService {
 
       if (me.isEmpty) return <ApproverHistoryItem>[];
 
-      final res = await _dio.get('/reservations/history');
+      // เปลี่ยน endpoint เป็นของ approver
+      final res = await _dio.get(
+        '/approver/history',
+        queryParameters: {'approver': me}, // ถ้า API ต้องการ
+      );
       if (res.statusCode == 200) {
         final data = (res.data as List).cast<Map<String, dynamic>>();
 

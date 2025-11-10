@@ -42,7 +42,9 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
       ApproverHistoryService(); // ✅ เพิ่ม service
 
   List<ApproverHistoryItem> _items = []; // ✅ เปลี่ยนจาก final เป็น var
+  // ignore: unused_field
   bool _isLoading = true; // ✅ เพิ่ม loading state
+  // ignore: unused_field
   String? _errorMessage; // ✅ เพิ่ม error state
 
   @override
@@ -72,90 +74,6 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
       print('❌ Error: $e');
     }
   }
-  // // ---------- Mock data ----------
-  // final List<ApproverHistoryItem> _items = [
-  //   // October 2025
-  //   ApproverHistoryItem(
-  //     dateTime: DateTime(2025, 10, 22, 8, 25),
-  //     status: DecisionStatus.approved,
-  //     floor: 'Floor5',
-  //     roomCode: 'R501',
-  //     slot: '08:00-10:00',
-  //     requesterName: 'Mr. Adam',
-  //   ),
-  //   ApproverHistoryItem(
-  //     dateTime: DateTime(2025, 10, 21, 10, 15),
-  //     status: DecisionStatus.disapproved,
-  //     floor: 'Floor4',
-  //     roomCode: 'R402',
-  //     slot: '10:00-12:00',
-  //     requesterName: 'Ms. Bella',
-  //     remark: 'The room is currently being renovated.',
-  //   ),
-  //   ApproverHistoryItem(
-  //     dateTime: DateTime(2025, 10, 19, 7, 56),
-  //     status: DecisionStatus.approved,
-  //     floor: 'Floor5',
-  //     roomCode: 'R503',
-  //     slot: '08:00-10:00',
-  //     requesterName: 'Mr. David',
-  //   ),
-  //   ApproverHistoryItem(
-  //     dateTime: DateTime(2025, 10, 18, 14, 10),
-  //     status: DecisionStatus.approved,
-  //     floor: 'Floor3',
-  //     roomCode: 'R305',
-  //     slot: '14:00-16:00',
-  //     requesterName: 'Dr. Grace',
-  //   ),
-  //   ApproverHistoryItem(
-  //     dateTime: DateTime(2025, 10, 17, 9, 20),
-  //     status: DecisionStatus.disapproved,
-  //     floor: 'Floor3',
-  //     roomCode: 'R304',
-  //     slot: '10:00-12:00',
-  //     requesterName: 'Mr. Ford',
-  //     remark: 'Power maintenance scheduled.',
-  //   ),
-
-  //   // September 2025
-  //   ApproverHistoryItem(
-  //     dateTime: DateTime(2025, 9, 27, 7, 39),
-  //     status: DecisionStatus.approved,
-  //     floor: 'Floor5',
-  //     roomCode: 'R501',
-  //     slot: '08:00-10:00',
-  //     requesterName: 'Mr. Ken',
-  //   ),
-  //   ApproverHistoryItem(
-  //     dateTime: DateTime(2025, 9, 13, 10, 48),
-  //     status: DecisionStatus.approved,
-  //     floor: 'Floor4',
-  //     roomCode: 'R408',
-  //     slot: '10:00-12:00',
-  //     requesterName: 'Ms. Iris',
-  //   ),
-  //   ApproverHistoryItem(
-  //     dateTime: DateTime(2025, 9, 5, 9, 12),
-  //     status: DecisionStatus.disapproved,
-  //     floor: 'Floor4',
-  //     roomCode: 'R407',
-  //     slot: '09:00-11:00',
-  //     requesterName: 'Mr. John',
-  //     remark: 'Room under maintenance',
-  //   ),
-
-  //   // November 2025 (ไว้ให้เห็นแท็บทางขวา)
-  //   ApproverHistoryItem(
-  //     dateTime: DateTime(2025, 11, 5, 9, 15),
-  //     status: DecisionStatus.approved,
-  //     floor: 'Floor2',
-  //     roomCode: 'R201',
-  //     slot: '09:00-11:00',
-  //     requesterName: 'Ms. Pam',
-  //   ),
-  // ];
-
   final List<ApproverHistoryItem> connected_api_items = [];
 
   // ===== Helpers: format =====
@@ -440,16 +358,43 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
                       ),
                       child: TabBarView(
                         children: [
-                          for (final g in tabGroups)
-                            ListView(
-                              padding: const EdgeInsets.fromLTRB(
-                                20,
-                                20,
-                                20,
-                                28,
+                          Expanded(
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(26),
+                                ),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Color.fromARGB(255, 255, 255, 255),
+                                    Color.fromARGB(255, 255, 255, 255),
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    blurRadius: 24,
+                                    spreadRadius: -8,
+                                    color: Colors.black26,
+                                    offset: Offset(0, -6),
+                                  ),
+                                ],
                               ),
-                              children: _buildOneMonthTabBody(g.value),
+                              child: TabBarView(
+                                children: [
+                                  for (final g in tabGroups)
+                                    RefreshIndicator(
+                                      onRefresh: _loadHistory,
+                                      child: ListView(
+                                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                                        children: _buildOneMonthTabBody(g.value),
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
+                          ),
                         ],
                       ),
                     ),
@@ -482,6 +427,7 @@ class _MonthLabel extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _Empty extends StatelessWidget {
   final String text;
   const _Empty({required this.text});

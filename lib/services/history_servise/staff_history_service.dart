@@ -8,6 +8,8 @@ class StaffHistoryService {
   /// ดึงประวัติทั้งหมด แล้วกรองให้เหลือเฉพาะ approved/rejected/reserved
   Future<List<ActivityItem>> fetchHistory() async {
     try {
+      // เปลี่ยน endpoint เป็นของ staff
+      //final res = await _dio.get('/staff/history');
       final res = await _dio.get('/reservations/history');
       if (res.statusCode == 200) {
         final data = (res.data as List).cast<Map<String, dynamic>>();
@@ -25,6 +27,7 @@ class StaffHistoryService {
       throw Exception('Network error: ${e.message}');
     }
   }
+
 
   ActivityItem _parseActivityItem(Map<String, dynamic> json) {
     DateTime dt;

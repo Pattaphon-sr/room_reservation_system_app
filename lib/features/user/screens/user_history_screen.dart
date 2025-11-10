@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:room_reservation_system_app/core/network/api_client.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
-import 'package:room_reservation_system_app/features/user/service.dart';
+import 'package:room_reservation_system_app/services/auth_service.dart';
+// import 'package:room_reservation_system_app/features/user/service.dart';
+//import 'package:room_reservation_system_app/services/history/user_history_service.dart';
+// ignore: unused_import
+import 'package:room_reservation_system_app/services/history_servise/user_history_service.dart';
 
 /// ===================== MODEL =====================
 enum ApprovalStatus { pending, approved, rejected }
@@ -24,27 +30,58 @@ class ActivityItem {
 }
 
 /// ===================== PAGE =====================
-class UserHistoryScreen extends StatefulWidget {
-  const UserHistoryScreen({super.key});
+class UserHistoryDio extends StatefulWidget {
+  const UserHistoryDio({Key? key}) : super(key: key);
   @override
-  State<UserHistoryScreen> createState() => _UserHistoryScreenState();
+  State<UserHistoryDio> createState() => _UserHistoryDioState();
 }
 
-class _UserHistoryScreenState extends State<UserHistoryScreen> {
-  final TextEditingController _search = TextEditingController();
-  final UserHistoryService _service = UserHistoryService(); // เพิ่ม
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
-  List<ActivityItem> _items = []; // เปลี่ยนจาก final
-  bool _isLoading = true; // เพิ่ม loading state
-  String? _errorMessage; // เพิ่ม error message
+class _UserHistoryDioState extends State<UserHistoryDio> with RouteAware {
+  final TextEditingController _search = TextEditingController();
+  final Dio _dio = ApiClient().dio;
+
+  List<ActivityItem> _items = [];
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  // Replace these with your actual user info
+  // final String? meId = null; // TODO: set user id
+  // final String? meUser = null; // TODO: set username
+
+  // ตัวอย่างการดึงข้อมูลจาก AuthService (แก้ให้ตรงกับโปรเจคจริง)
+  String? get meId => AuthService.instance.payload?['id']?.toString();
+  String? get meUser => AuthService.instance.payload?['username']?.toString();
 
   @override
   void initState() {
     super.initState();
-    _loadHistory(); // เรียกตอน init
+    _loadHistory();
   }
 
-  /// ดึงข้อมูลจาก API
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Register route observer correctly
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+  }
+
+  @override
+  void dispose() {
+    // Unregister route observer correctly
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Called when returning to this screen (e.g. after approve/reject)
+    _loadHistory();
+  }
+
+  // ...existing code...
+  /// ดึงข้อมูลจาก API ด้วย Dio
   Future<void> _loadHistory() async {
     setState(() {
       _isLoading = true;
@@ -52,18 +89,69 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
     });
 
     try {
-      final items = await _service.fetchHistory();
+      final res = await _dio.get(
+        '/reservations/history',
+        queryParameters: {
+          if (meId != null) 'requested_by_id': meId,
+          if (meUser != null) 'requested_by': meUser,
+          'me': 1,
+        },
+      );
+      final List data = res.data as List;
+
+      // เพิ่มฟังก์ชันกรองข้อมูลของ user ที่ล็อกอิน
+      List mineOnly = data.where((json) {
+        final by = json['requested_by']?.toString();
+        final byId = json['requested_by_id']?.toString();
+        return (meId != null && byId == meId) || (meUser != null && by == meUser);
+      }).toList();
+
+      final items = mineOnly
+          .map<ActivityItem>((json) {
+            return ActivityItem(
+              status: _parseStatus(json['status']),
+              floor: json['floor'] ?? '',
+              roomCode: json['room_code'] ?? '',
+              slot: json['slot'] ?? '',
+              dateTime: DateTime.parse(json['date_time']),
+              note: json['note'],
+            );
+          })
+          .where((item) => item.status != ApprovalStatus.pending)
+          .toList();
+
       setState(() {
         _items = items;
         _isLoading = false;
       });
-      print('✅ Loaded ${items.length} items');
     } catch (e) {
       setState(() {
         _isLoading = false;
         _errorMessage = e.toString();
       });
-      print('❌ Error: $e');
+    }
+  }
+// ...existing code...
+
+  ApprovalStatus _parseStatus(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return ApprovalStatus.pending;
+      case 'approved':
+      case 'approve':
+      case 'reserved':
+      case 'success':
+      case 'done':
+      case 'accept':
+      case 'pass':
+        return ApprovalStatus.approved;
+      case 'rejected':
+      case 'disapproved':
+      case 'fail':
+      case 'denied':
+        return ApprovalStatus.rejected;
+      default:
+        return ApprovalStatus.pending;
     }
   }
 
@@ -173,6 +261,8 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
     final q = _search.text.trim().toLowerCase();
 
     // ✅ Filter + กรองเฉพาะ approved และ rejected
+    // เฉพาะผู้ใช้ที่มีการจองห้องและได้รับการ approved หรือ rejected เท่านั้นถึงจะมีประวัติ
+    // ถ้าเป็นผู้ใช้ใหม่ที่ยังไม่เคยจอง จะไม่มีข้อมูลในหน้านี้
     final filtered = _items.where((e) {
       // กรองออก pending
       if (e.status == ApprovalStatus.pending) return false;
@@ -308,96 +398,79 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
                   ),
 
                   Expanded(
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(26),
-                        ),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            blurRadius: 24,
-                            spreadRadius: -8,
-                            color: Colors.black26,
-                            offset: Offset(0, -6),
-                          ),
-                        ],
-                      ),
-                      child: (groups.isEmpty)
-                          ? Center(child: _Empty(text: 'No history found.'))
-                          : TabBarView(
-                              children: [
-                                for (final g in groups)
-                                  // ✅ เพิ่ม RefreshIndicator
-                                  RefreshIndicator(
-                                    onRefresh: _loadHistory,
-                                    child: ListView(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        20,
-                                        20,
-                                        20,
-                                        28,
-                                      ),
-                                      children: () {
-                                        final monthItems = g.value;
-
-                                        final done =
-                                            monthItems
-                                                .where(
-                                                  (e) =>
-                                                      e.status !=
-                                                      ApprovalStatus.pending,
-                                                )
-                                                .toList()
-                                              ..sort(
-                                                (a, b) => b.dateTime.compareTo(
-                                                  a.dateTime,
-                                                ),
-                                              );
-
-                                        return [
-                                          // const SizedBox(height: 24),
-                                          // const Divider(height: 0, thickness: 0.8, color: Color(0xFFE1E6EB)),
-                                          // const SizedBox(height: 18),
-
-                                          // _SectionHeader(title: 'Done'),
-                                          // const SizedBox(height: 10),
-                                          if (done.isNotEmpty)
-                                            ...() {
-                                              final widgets = <Widget>[];
-                                              for (
-                                                var i = 0;
-                                                i < done.length;
-                                                i++
-                                              ) {
-                                                widgets.add(
-                                                  _ActivityTile(item: done[i]),
-                                                );
-                                                if (i != done.length - 1) {
-                                                  widgets.add(
-                                                    const Divider(
-                                                      height: 22,
-                                                      thickness: 0.9,
-                                                      color: Color(0xFFE1E6EB),
-                                                    ),
-                                                  );
-                                                }
-                                              }
-                                              return widgets;
-                                            }(),
-
-                                          const SizedBox(height: 12),
-                                        ];
-                                      }(),
-                                    ),
-                                  ),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(26),
+                              ),
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  blurRadius: 24,
+                                  spreadRadius: -8,
+                                  color: Colors.black26,
+                                  offset: Offset(0, -6),
+                                ),
                               ],
                             ),
-                    ),
+                            child: filtered.isEmpty
+                                ? const Center(
+                                    child: Text(
+                                      'No history found',
+                                      style: TextStyle(
+                                        color: Color(0xFF9AA1A9),
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  )
+                                : groups.isEmpty
+                                    ? const Center(
+                                        child: _Empty(
+                                          text: 'ยังไม่มีประวัติการจอง\n(จะมีข้อมูลหลังได้รับการอนุมัติหรือถูกปฏิเสธการจองห้อง)',
+                                        ),
+                                      )
+                                    : TabBarView(
+                                        children: [
+                                          for (final g in groups)
+                                            RefreshIndicator(
+                                              onRefresh: _loadHistory,
+                                              child: ListView(
+                                                padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                                                children: () {
+                                                  final monthItems = g.value;
+                                                  final done = monthItems
+                                                      .where((e) => e.status != ApprovalStatus.pending)
+                                                      .toList()
+                                                    ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+                                                  return [
+                                                    if (done.isNotEmpty)
+                                                      ...() {
+                                                        final widgets = <Widget>[];
+                                                        for (var i = 0; i < done.length; i++) {
+                                                          widgets.add(_ActivityTile(item: done[i]));
+                                                          if (i != done.length - 1) {
+                                                            widgets.add(const Divider(
+                                                              height: 22,
+                                                              thickness: 0.9,
+                                                              color: Color(0xFFE1E6EB),
+                                                            ));
+                                                          }
+                                                        }
+                                                        return widgets;
+                                                      }(),
+                                                    const SizedBox(height: 12),
+                                                  ];
+                                                }(),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                        ),
                   ),
                 ],
               ),
@@ -410,9 +483,11 @@ class _UserHistoryScreenState extends State<UserHistoryScreen> {
 }
 
 /// ===== Widgets ย่อย =====
+// ignore: unused_element
 class _SectionHeader extends StatelessWidget {
   final String title;
   final Color? color;
+  // ignore: unused_element_parameter
   const _SectionHeader({required this.title, this.color});
   @override
   Widget build(BuildContext context) {

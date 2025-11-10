@@ -13,19 +13,21 @@ class UserHistoryService {
       final meId = _asString(payload['id']);
       final meUser = _asString(payload['username']);
 
-      // ถ้าไม่รู้ว่าเราเป็นใคร → เพื่อความปลอดภัย คืนลิสต์ว่าง (ไม่ดึงของคนอื่นมาโชว์)
       if (meId == null && meUser == null) {
         return <ActivityItem>[];
       }
 
-      // ถ้า backend รองรับ query ฝั่งเซิร์ฟเวอร์ ก็ติดไปด้วย (ไม่เป็นพิษเป็นภัยถ้าไม่รองรับ)
+      // ใช้ endpoint เฉพาะ user เท่านั้น
+      final endpoint = '/reservations/history';
+      final query = {
+        if (meId != null) 'requested_by_id': meId,
+        if (meUser != null) 'requested_by': meUser,
+        'me': 1,
+      };
+
       final res = await _dio.get(
-        '/reservations/history',
-        queryParameters: {
-          if (meId != null) 'requested_by_id': meId,
-          if (meUser != null) 'requested_by': meUser,
-          'me': 1,
-        },
+        endpoint,
+        queryParameters: query,
       );
 
       if (res.statusCode != 200) {
@@ -34,13 +36,26 @@ class UserHistoryService {
 
       final rawList = _extractList(res.data);
 
-      // กรองฝั่ง client อีกชั้นเสมอ → แสดงเฉพาะของฉันเท่านั้น
+      // กรองข้อมูลให้เหลือเฉพาะของ user ที่ล็อกอิน
       final mineOnly = rawList.where((e) => _isMine(e, meId, meUser)).toList();
 
-      return mineOnly.map(_toItem).toList();
+      final filtered = mineOnly
+          .map(_toItem)
+          .where((item) =>
+              item.status == ApprovalStatus.approved ||
+              item.status == ApprovalStatus.rejected)
+          .toList();
+
+      return filtered;
     } on DioException catch (e) {
       throw Exception('Network error: ${e.message}');
     }
+  }
+
+  /// รีโหลดข้อมูลใหม่จาก backend (ใช้ในหน้า UI เพื่อ refresh)
+  Future<List<ActivityItem>> reloadHistory() async {
+    // reload จะได้ข้อมูลล่าสุดและกรองเฉพาะ approved/rejected
+    return await fetchHistory();
   }
 
   // ---------- helpers ----------

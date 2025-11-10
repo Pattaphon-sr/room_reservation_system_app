@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
-import 'package:room_reservation_system_app/features/staff/service.dart'; // ไม่มี lib/
+// import 'package:room_reservation_system_app/services/history_service/staff_history_service.dart';
+import 'package:room_reservation_system_app/services/history_servise/staff_history_service.dart';
 
 /// --------------------- MODEL ---------------------
 enum ApprovalStatus { pending, approved, rejected }
@@ -76,124 +77,6 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
     }
   }
 
-  /// Mock data (เห็นทุกคน ทั้ง Pending/Done)
-  // final List<ActivityItem> _items = [
-  //   // Pending (Oct)
-  //   ActivityItem(
-  //     status: ApprovalStatus.pending,
-  //     floor: 'Floor5',
-  //     roomCode: 'R501',
-  //     slot: '08:00-10:00',
-  //     dateTime: DateTime(2025, 10, 22, 7, 48),
-  //     requestedBy: 'Mr. Adam',
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.pending,
-  //     floor: 'Floor4',
-  //     roomCode: 'R402',
-  //     slot: '10:00-12:00',
-  //     dateTime: DateTime(2025, 10, 21, 9, 20),
-  //     requestedBy: 'Ms. Bella',
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.pending,
-  //     floor: 'Floor3',
-  //     roomCode: 'R303',
-  //     slot: '13:00-15:00',
-  //     dateTime: DateTime(2025, 10, 20, 14, 10),
-  //     requestedBy: 'Dr. Chan',
-  //   ),
-
-  //   // Done (Oct)
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor5',
-  //     roomCode: 'R501',
-  //     slot: '08:00-10:00',
-  //     dateTime: DateTime(2025, 10, 19, 7, 56),
-  //     requestedBy: 'Mr. David',
-  //     approvedBy: 'Dr. Parker',
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor5',
-  //     roomCode: 'R503',
-  //     slot: '08:00-10:00',
-  //     dateTime: DateTime(2025, 10, 18, 8, 10),
-  //     requestedBy: 'Ms. Eva',
-  //     approvedBy: 'Assoc. Prof. Somchai',
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.rejected,
-  //     floor: 'Floor3',
-  //     roomCode: 'R304',
-  //     slot: '10:00-12:00',
-  //     dateTime: DateTime(2025, 10, 17, 10, 48),
-  //     requestedBy: 'Mr. Ford',
-  //     approvedBy: 'Dr. Jane',
-  //     note: 'The ceiling collapsed',
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor4',
-  //     roomCode: 'R405',
-  //     slot: '09:00-11:00',
-  //     dateTime: DateTime(2025, 10, 16, 9, 12),
-  //     requestedBy: 'Dr. Grace',
-  //     approvedBy: 'Dean Kitti',
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor3',
-  //     roomCode: 'R302',
-  //     slot: '13:00-15:00',
-  //     dateTime: DateTime(2025, 10, 15, 13, 45),
-  //     requestedBy: 'Mr. Henry',
-  //     approvedBy: 'Dr. Mia',
-  //   ),
-
-  //   // Done (Sep)
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor5',
-  //     roomCode: 'R501',
-  //     slot: '08:00-10:00',
-  //     dateTime: DateTime(2025, 9, 27, 7, 39),
-  //     requestedBy: 'Mr. Leo',
-  //     approvedBy: 'Dr. Mia',
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.approved,
-  //     floor: 'Floor4',
-  //     roomCode: 'R408',
-  //     slot: '10:00-12:00',
-  //     dateTime: DateTime(2025, 9, 13, 10, 48),
-  //     requestedBy: 'Ms. Nora',
-  //     approvedBy: 'Dr. Parker',
-  //   ),
-  //   ActivityItem(
-  //     status: ApprovalStatus.rejected,
-  //     floor: 'Floor3',
-  //     roomCode: 'R307',
-  //     slot: '09:00-11:00',
-  //     dateTime: DateTime(2025, 9, 5, 9, 12),
-  //     requestedBy: 'Mr. Omar',
-  //     approvedBy: 'Assoc. Prof. Somchai',
-  //     note: 'Room under maintenance',
-  //   ),
-
-  //   // ตัวอย่าง (Nov) — เผื่อให้เห็นแท็บต่อไปทางขวา
-  //   ActivityItem(
-  //     status: ApprovalStatus.pending,
-  //     floor: 'Floor3',
-  //     roomCode: 'R301',
-  //     slot: '09:00-11:00',
-  //     dateTime: DateTime(2025, 11, 5, 9, 15),
-  //     requestedBy: 'Ms. Pam',
-  //   ),
-  // ];
-
-  // final List<ActivityItem> connectedApiItems = [];
 
   /// ---------- Helpers: สำหรับ grouping เดือน ----------
   String _monthYearLabel(DateTime dt) {
@@ -320,7 +203,7 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
       return const Scaffold(
         backgroundColor: Color(0xFF121212),
         body: Center(
-          child: Text('No data', style: TextStyle(color: Colors.white)),
+          child: Text('No history found', style: TextStyle(color: Colors.white)),
         ),
       );
     }
@@ -344,7 +227,6 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
           SafeArea(
             child: DefaultTabController(
               length: tabGroups.length,
-              // ถ้าอยากให้เริ่มที่แท็บล่าสุด ให้ใช้ initialIndex: tabGroups.length - 1,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -472,14 +354,19 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
                       child: TabBarView(
                         children: [
                           for (final g in tabGroups)
-                            ListView(
-                              padding: const EdgeInsets.fromLTRB(
-                                20,
-                                20,
-                                20,
-                                28,
+                            RefreshIndicator(
+                              onRefresh: _loadHistory,
+                              color: Colors.blue,
+                              child: ListView(
+                                padding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  20,
+                                  20,
+                                  28,
+                                ),
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: _buildOneMonthTabBody(g.value),
                               ),
-                              children: _buildOneMonthTabBody(g.value),
                             ),
                         ],
                       ),
@@ -513,9 +400,11 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
 }
 
 /// --------------------- SMALL WIDGETS ---------------------
+// ignore: unused_element
 class _SectionHeader extends StatelessWidget {
   final String title;
   final Color? color;
+  // ignore: unused_element_parameter
   const _SectionHeader({required this.title, this.color});
   @override
   Widget build(BuildContext context) {
@@ -547,6 +436,7 @@ class _MonthLabel extends StatelessWidget {
   }
 }
 
+// ignore: unused_element
 class _Empty extends StatelessWidget {
   final String text;
   const _Empty({required this.text});

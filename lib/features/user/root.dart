@@ -84,8 +84,8 @@ class _UserRootState extends State<UserRoot> {
             ),
             NestedTabNavigator(
               navKey: _navKeys[2],
-              initialPageBuilder: (_) => const UserHistoryScreen(),
-              routes: {'/': (_) => const UserHistoryScreen()},
+              initialPageBuilder: (_) => const UserHistoryDio(),
+              routes: {'/': (_) => const UserHistoryDio()},
             ),
             NestedTabNavigator(
               navKey: _navKeys[3],
