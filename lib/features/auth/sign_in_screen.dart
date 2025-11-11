@@ -29,7 +29,7 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   Future<void> _doLogin() async {
-    // ถ้ายังกรอกไม่ครบ / ไม่ผ่าน validator → แจ้งเตือนและไม่ไปต่อ
+    // 1. ตรวจสอบ Form
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
@@ -43,22 +43,24 @@ class _SignInScreenState extends State<SignInScreen> {
       final pass = passCtrl.text;
       final looksLikeEmail = id.contains('@');
 
+      // 2. พยายาม Login
       final role = await AuthService.instance.login(
         email: looksLikeEmail ? id : null,
         username: looksLikeEmail ? null : id,
         password: pass,
       );
 
-      setState(() => loading = false);
-
+      // 3. ถ้า Login ไม่ผ่าน (role เป็น null)
       if (role == null) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid email or password')),
         );
+        setState(() => loading = false); // ⬅️ หยุด loading
         return;
       }
 
+      // 4. ถ้า Login สำเร็จ
       Widget dest;
       switch (role) {
         case Role.user:
@@ -77,8 +79,16 @@ class _SignInScreenState extends State<SignInScreen> {
         MaterialPageRoute(builder: (_) => dest),
         (_) => false,
       );
-    } finally {
-      if (mounted) setState(() => loading = false);
+      // ❗️ ไม่ต้อง setState(false) ที่นี่ เพราะหน้ากำลังจะถูกทำลาย
+
+    } catch (e) {
+      // 5. ถ้าเกิด Error (เช่น ต่อเน็ตไม่ได้)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: ${e.toString()}')),
+        );
+        setState(() => loading = false); // ⬅️ หยุด loading
+      }
     }
   }
 
@@ -102,6 +112,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ... (ส่วน "Hello Sign in!" เหมือนเดิม)
                     Row(
                       children: [
                         SizedBox(width: 32),
@@ -143,16 +154,16 @@ class _SignInScreenState extends State<SignInScreen> {
                           ),
                         ),
                       ),
-                      child: Padding(
+                      // ⭐️ ใช้ SingleChildScrollView
+                      child: SingleChildScrollView(
                         padding: EdgeInsets.symmetric(horizontal: 42),
                         child: Form(
                           key: _formKey,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          autovalidateMode: AutovalidateMode.disabled,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               SizedBox(height: 40),
-                              // Spacer(),
                               TextFormField(
                                 controller: emailCtrl,
                                 keyboardType: TextInputType.emailAddress,
@@ -168,19 +179,13 @@ class _SignInScreenState extends State<SignInScreen> {
                                     color: Color(0xFF0F828C),
                                   ),
                                   hintStyle: TextStyle(color: Colors.grey[500]),
-                                  labelText: 'Gmail',
+                                  labelText: 'Email',
                                   hintText: 'user@gmail.com',
                                 ),
                                 validator: (v) {
                                   final text = v?.trim() ?? '';
                                   if (text.isEmpty) {
-                                    return 'Please enter your email.';
-                                  }
-                                  if (text.contains('@')) {
-                                    final emailOk = RegExp(
-                                      r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-                                    ).hasMatch(text);
-                                    if (!emailOk) return 'Invalid email format';
+                                    return 'Please enter your email or username.';
                                   }
                                   return null;
                                 },
@@ -190,7 +195,12 @@ class _SignInScreenState extends State<SignInScreen> {
                                 controller: passCtrl,
                                 keyboardType: TextInputType.visiblePassword,
                                 obscureText: _obscure,
-                                textInputAction: TextInputAction.next,
+                                textInputAction: TextInputAction.done,
+                                // ⭐️ [FIX] เปลี่ยน onSubmitted เป็น onFieldSubmitted
+                                onFieldSubmitted: (_) { 
+                                  if (loading) return;
+                                  _doLogin();
+                                },
                                 decoration: InputDecoration(
                                   labelStyle: TextStyle(
                                     fontWeight: FontWeight.w500,
@@ -205,7 +215,6 @@ class _SignInScreenState extends State<SignInScreen> {
                                   labelText: 'Password',
                                   hintText: 'your password',
                                   suffixIcon: IconButton(
-                                    // <- ปุ่มสลับโชว์/ซ่อน
                                     onPressed: () =>
                                         setState(() => _obscure = !_obscure),
                                     icon: Icon(
@@ -224,12 +233,18 @@ class _SignInScreenState extends State<SignInScreen> {
                                   return null;
                                 },
                               ),
-                              Spacer(flex: 2),
+                              
+                              // ⭐️ [FIX] เปลี่ยน Spacer เป็น SizedBox
+                              SizedBox(height: size.height * 0.1),
+
                               AppButton.solid(
                                 label: loading ? 'SIGNING IN...' : 'SIGN IN',
                                 onPressed: loading ? null : _doLogin,
                               ),
-                              Spacer(flex: 3),
+                              
+                              // ⭐️ [FIX] เปลี่ยน Spacer เป็น SizedBox
+                              SizedBox(height: size.height * 0.15),
+                              
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
