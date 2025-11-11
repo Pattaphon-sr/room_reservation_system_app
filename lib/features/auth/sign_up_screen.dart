@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:room_reservation_system_app/core/theme/theme.dart';
 import 'package:room_reservation_system_app/services/auth_service.dart';
-import 'package:room_reservation_system_app/shared/widgets/widgets.dart';
+// ⭐️ import "showAirDialog" (มีอยู่แล้ว)
+import 'package:room_reservation_system_app/shared/widgets/widgets.dart'; 
 import 'package:room_reservation_system_app/features/auth/auth.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -11,7 +12,6 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  // เพิ่ม GlobalKey สำหรับ Form
   final _formKey = GlobalKey<FormState>();
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
@@ -19,6 +19,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final pass2Ctrl = TextEditingController();
   bool _obscure = true;
   bool _obscure2 = true;
+
+  bool _loading = false; 
 
   @override
   void dispose() {
@@ -29,41 +31,102 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
-  // ฟังก์ชันสำหรับ Sign Up
+  // ⭐️ [FIX] แก้ไข _doSignUp ให้เรียกใช้ "showAirDialog"
   Future<void> _doSignUp() async {
-    // ตรวจสอบความถูกต้องของข้อมูลใน Form
+    // 1. ตรวจสอบ Form
     if (!(_formKey.currentState?.validate() ?? false)) {
-      return; // ถ้าไม่ถูกต้อง, ไม่ทำต่อ
+      return; 
     }
 
-    // ถ้าข้อมูลถูกต้อง, ดำเนินการต่อ
-    final email = emailCtrl.text.trim();
-    final username = nameCtrl.text.trim();
-    final pass = passCtrl.text;
+    setState(() => _loading = true); // ⬅️ เริ่ม Loading
 
-    final err = await AuthService.instance.signup(
-      email: email,
-      username: username,
-      password: pass,
-    );
+    String? errMessage; // ⬅️ ตัวแปรเก็บ Error (ถ้ามี)
+
+    try {
+      // 2. เรียก AuthService
+      errMessage = await AuthService.instance.signup(
+        email: emailCtrl.text.trim(),
+        username: nameCtrl.text.trim(),
+        password: passCtrl.text,
+      );
+    } catch (e) {
+      // 3. ถ้า Error (เช่น ต่อเน็ตไม่ได้)
+      errMessage = e.toString();
+    }
+
     if (!mounted) return;
-    if (err == null) {
+
+    // 4. หยุด Loading "ก่อน" ที่จะโชว์ Dialog หรือ SnackBar
+    setState(() => _loading = false);
+
+    // 5. จัดการผลลัพธ์
+    if (errMessage == null) {
+      // 6. ⭐️ [NEW] ถ้าสำเร็จ ➔ โชว์ "showAirDialog"
+      await showAirDialog(
+        context,
+        height: 300,
+        dismissible: false, // บังคับให้กด OK
+        title: null, // เราจะใช้ content ใส่ Icon แทน
+        
+        // ⭐️ [NEW] ใส่ Icon และ Text ใน Content
+        content: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.check_circle, size: 68, color: Colors.lightGreenAccent),
+            SizedBox(height: 24),
+            Text(
+              "Success!",
+              style: TextStyle(
+                color: Colors.white, // ⬅️ showAirDialog ใช้ Text สีขาว
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Signup successful.\nPlease sign in.",
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+
+        // ⭐️ [NEW] ใส่ปุ่ม OK ใน Actions
+        actions: [
+          Center(
+            child: SizedBox(
+              width: 120,
+              child: AppButton.solid( 
+                label: 'OK',
+                onPressed: () {
+                  Navigator.of(context).pop(); // ⬅️ ปิด Pop-up
+                },
+              ),
+            ),
+          )
+        ],
+      );
+
+      // 7. "หลังจาก" กด OK แล้ว ค่อยเด้งกลับไปหน้า Login
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SignInScreen(),
+        ),
+      );
+
+    } else {
+      // 8. ถ้าไม่สำเร็จ (มี Error Message กลับมา) ➔ โชว์ SnackBar แดง
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Signup successful. Please sign in.',
-          ),
+        SnackBar(
+          content: Text('Signup failed: $errMessage'),
+          backgroundColor: Colors.red,
         ),
       );
     }
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const SignInScreen(),
-      ),
-    );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +148,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ... (ส่วน "Create Account" เหมือนเดิม)
                     Row(
                       children: [
                         SizedBox(width: 32),
@@ -126,18 +190,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         ),
                       ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 42),
-                        // เพิ่ม widget Form และกำหนด key
-                        child: Form(
-                          key: _formKey,
-                          // ตั้งค่าให้ validate อัตโนมัติเมื่อผู้ใช้พิมพ์
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                      // ⭐️ [FIX] ใช้ SingleChildScrollView
+                      child: Form(
+                        key: _formKey,
+                        // ⭐️ [FIX] เปลี่ยนเป็น .disabled
+                        autovalidateMode: AutovalidateMode.disabled,
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.symmetric(horizontal: 42),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               SizedBox(height: 40),
-                              // เปลี่ยนจาก TextField เป็น TextFormField
                               TextFormField(
                                 controller: emailCtrl,
                                 keyboardType: TextInputType.emailAddress,
@@ -156,17 +219,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   labelText: 'Gmail',
                                   hintText: 'user@gmail.com',
                                 ),
-                                // เพิ่ม validator
                                 validator: (v) {
                                   final text = v?.trim() ?? '';
                                   if (text.isEmpty)
                                     return 'Please enter your email.';
-                                  // ลบการเช็ค Email format ออก
+                                  // เช็ก format email
+                                  final emailOk = RegExp(
+                                          r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                                      .hasMatch(text);
+                                  if (!emailOk) return 'Invalid email format';
                                   return null;
                                 },
                               ),
                               SizedBox(height: 14),
-                              // เปลี่ยนจาก TextField เป็น TextFormField
                               TextFormField(
                                 controller: nameCtrl,
                                 textInputAction: TextInputAction.next,
@@ -184,7 +249,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   labelText: 'Username',
                                   hintText: 'username',
                                 ),
-                                // เพิ่ม validator
                                 validator: (v) {
                                   if ((v?.trim() ?? '').isEmpty) {
                                     return 'Please enter your username.';
@@ -193,7 +257,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 },
                               ),
                               SizedBox(height: 14),
-                              // เปลี่ยนจาก TextField เป็น TextFormField
                               TextFormField(
                                 controller: passCtrl,
                                 textInputAction: TextInputAction.next,
@@ -224,22 +287,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     ),
                                   ),
                                 ),
-                                // เพิ่ม validator
                                 validator: (v) {
                                   if ((v ?? '').isEmpty) {
                                     return 'Please enter your password.';
                                   }
-                                  // ลบการเช็คความยาว Password ออก
+                                  if (v!.length < 6) {
+                                    return 'Password must be at least 6 characters.';
+                                  }
                                   return null;
                                 },
                               ),
                               SizedBox(height: 14),
-                              // เปลี่ยนจาก TextField เป็น TextFormField
                               TextFormField(
                                 controller: pass2Ctrl,
                                 textInputAction: TextInputAction.done,
                                 keyboardType: TextInputType.visiblePassword,
                                 obscureText: _obscure2,
+                                onFieldSubmitted: (_) { 
+                                  if (_loading) return;
+                                  _doSignUp();
+                                },
                                 decoration: InputDecoration(
                                   labelStyle: TextStyle(
                                     fontWeight: FontWeight.w500,
@@ -265,22 +332,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     ),
                                   ),
                                 ),
-                                // เพิ่ม validator
                                 validator: (v) {
                                   if ((v ?? '').isEmpty) {
                                     return 'Please confirm your password.';
                                   }
-                                  // ลบการเช็ค Password match ออก
+                                  if (v != passCtrl.text) {
+                                    return 'Passwords do not match.';
+                                  }
                                   return null;
                                 },
                               ),
-                              Spacer(flex: 2),
+                              
+                              // ⭐️ [FIX] เปลี่ยน Spacer เป็น SizedBox
+                              SizedBox(height: 30),
+
                               AppButton.solid(
-                                label: 'SIGN UP',
-                                // เรียกใช้ _doSignUp เมื่อกดปุ่ม
-                                onPressed: _doSignUp,
+                                label: _loading ? 'SIGNING UP...' : 'SIGN UP',
+                                onPressed: _loading ? null : _doSignUp,
                               ),
-                              Spacer(flex: 3),
+                              
+                              // ⭐️ [FIX] เปลี่ยน Spacer เป็น SizedBox
+                              SizedBox(height: 30),
+                              
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -312,7 +385,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 50),
+                              SizedBox(height: 50), 
                             ],
                           ),
                         ),
