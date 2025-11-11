@@ -57,6 +57,9 @@ class _UserHistoryDioState extends State<UserHistoryDio> with RouteAware {
   @override
   void initState() {
     super.initState();
+    setState(() {
+      _isLoading = true;
+    });
     _loadHistory();
   }
 
@@ -80,12 +83,11 @@ class _UserHistoryDioState extends State<UserHistoryDio> with RouteAware {
     _loadHistory();
   }
 
-  // ...existing code...
   /// ดึงข้อมูลจาก API ด้วย Dio
   Future<void> _loadHistory() async {
     setState(() {
-      _isLoading = true;
       _errorMessage = null;
+      // _isLoading = true; // ไม่ต้อง set ตอน refresh เพื่อไม่ให้หน้าดำกระพริบ
     });
 
     try {
@@ -103,7 +105,8 @@ class _UserHistoryDioState extends State<UserHistoryDio> with RouteAware {
       List mineOnly = data.where((json) {
         final by = json['requested_by']?.toString();
         final byId = json['requested_by_id']?.toString();
-        return (meId != null && byId == meId) || (meUser != null && by == meUser);
+        return (meId != null && byId == meId) ||
+            (meUser != null && by == meUser);
       }).toList();
 
       final items = mineOnly
@@ -131,7 +134,6 @@ class _UserHistoryDioState extends State<UserHistoryDio> with RouteAware {
       });
     }
   }
-// ...existing code...
 
   ApprovalStatus _parseStatus(String? status) {
     switch (status?.toLowerCase()) {
@@ -398,27 +400,33 @@ class _UserHistoryDioState extends State<UserHistoryDio> with RouteAware {
                   ),
 
                   Expanded(
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(26),
-                              ),
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  blurRadius: 24,
-                                  spreadRadius: -8,
-                                  color: Colors.black26,
-                                  offset: Offset(0, -6),
-                                ),
-                              ],
-                            ),
-                            child: filtered.isEmpty
-                                ? const Center(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(26),
+                        ),
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color(0xFFFFFFFF), Color(0xFFFFFFFF)],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            blurRadius: 24,
+                            spreadRadius: -8,
+                            color: Colors.black26,
+                            offset: Offset(0, -6),
+                          ),
+                        ],
+                      ),
+                      child: RefreshIndicator(
+                        onRefresh: _loadHistory,
+                        child: filtered.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: const [
+                                  SizedBox(height: 120),
+                                  Center(
                                     child: Text(
                                       'No history found',
                                       style: TextStyle(
@@ -427,50 +435,82 @@ class _UserHistoryDioState extends State<UserHistoryDio> with RouteAware {
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                  )
-                                : groups.isEmpty
-                                    ? const Center(
-                                        child: _Empty(
-                                          text: 'ยังไม่มีประวัติการจอง\n(จะมีข้อมูลหลังได้รับการอนุมัติหรือถูกปฏิเสธการจองห้อง)',
+                                  ),
+                                ],
+                              )
+                            : groups.isEmpty
+                            ? ListView(
+                                physics: const AlwaysScrollableScrollPhysics(),
+                                children: const [
+                                  SizedBox(height: 120),
+                                  Center(
+                                    child: _Empty(text: 'No history found'),
+                                  ),
+                                ],
+                              )
+                            : TabBarView(
+                                children: [
+                                  for (final g in groups)
+                                    RefreshIndicator(
+                                      onRefresh: _loadHistory,
+                                      child: ListView(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          20,
+                                          20,
+                                          20,
+                                          28,
                                         ),
-                                      )
-                                    : TabBarView(
-                                        children: [
-                                          for (final g in groups)
-                                            RefreshIndicator(
-                                              onRefresh: _loadHistory,
-                                              child: ListView(
-                                                padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                                                children: () {
-                                                  final monthItems = g.value;
-                                                  final done = monthItems
-                                                      .where((e) => e.status != ApprovalStatus.pending)
-                                                      .toList()
-                                                    ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
-                                                  return [
-                                                    if (done.isNotEmpty)
-                                                      ...() {
-                                                        final widgets = <Widget>[];
-                                                        for (var i = 0; i < done.length; i++) {
-                                                          widgets.add(_ActivityTile(item: done[i]));
-                                                          if (i != done.length - 1) {
-                                                            widgets.add(const Divider(
-                                                              height: 22,
-                                                              thickness: 0.9,
-                                                              color: Color(0xFFE1E6EB),
-                                                            ));
-                                                          }
-                                                        }
-                                                        return widgets;
-                                                      }(),
-                                                    const SizedBox(height: 12),
-                                                  ];
-                                                }(),
-                                              ),
-                                            ),
-                                        ],
+                                        children: () {
+                                          final monthItems = g.value;
+                                          final done =
+                                              monthItems
+                                                  .where(
+                                                    (e) =>
+                                                        e.status !=
+                                                        ApprovalStatus.pending,
+                                                  )
+                                                  .toList()
+                                                ..sort(
+                                                  (a, b) => b.dateTime
+                                                      .compareTo(a.dateTime),
+                                                );
+                                          return [
+                                            if (done.isNotEmpty)
+                                              ...() {
+                                                final widgets = <Widget>[];
+                                                for (
+                                                  var i = 0;
+                                                  i < done.length;
+                                                  i++
+                                                ) {
+                                                  widgets.add(
+                                                    _ActivityTile(
+                                                      item: done[i],
+                                                    ),
+                                                  );
+                                                  if (i != done.length - 1) {
+                                                    widgets.add(
+                                                      const Divider(
+                                                        height: 22,
+                                                        thickness: 0.9,
+                                                        color: Color(
+                                                          0xFFE1E6EB,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                }
+                                                return widgets;
+                                              }(),
+                                            const SizedBox(height: 12),
+                                          ];
+                                        }(),
                                       ),
-                        ),
+                                    ),
+                                ],
+                              ),
+                      ),
+                    ),
                   ),
                 ],
               ),

@@ -53,14 +53,16 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadHistory(); // เพิ่มบรรทัดนี้
-  }
-
-  // เพิ่ม method นี้
-  Future<void> _loadHistory() async {
     setState(() {
       _isLoading = true;
+    });
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    setState(() {
       _errorMessage = null;
+      // _isLoading = true; // คอมเมนต์บรรทัดนี้ออก เพื่อไม่ให้หน้ากระพริบตอนรีเฟรช
     });
 
     try {
@@ -76,7 +78,6 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
       });
     }
   }
-
 
   /// ---------- Helpers: สำหรับ grouping เดือน ----------
   String _monthYearLabel(DateTime dt) {
@@ -295,57 +296,76 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
                       ),
                       child: TabBarView(
                         children: tabGroups.isEmpty
-                          ? [
-                              Center(
-                                child: Text(
-                                  'No history found',
-                                  style: TextStyle(color: Colors.black54, fontSize: 18),
+                            ? [
+                                Center(
+                                  child: Text(
+                                    'No history found',
+                                    style: TextStyle(
+                                      color: Colors.black54,
+                                      fontSize: 18,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ]
-                          : [
-                              for (final g in tabGroups)
-                                RefreshIndicator(
-                                  onRefresh: _loadHistory,
-                                  color: Colors.blue,
-                                  child: _isLoading
-                                    ? Center(child: CircularProgressIndicator())
-                                    : _errorMessage != null
-                                      ? Center(
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(24.0),
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                const Icon(Icons.error_outline, color: Colors.red, size: 64),
-                                                const SizedBox(height: 16),
-                                                Text(
-                                                  'Error: $_errorMessage',
-                                                  style: const TextStyle(color: Colors.red),
-                                                  textAlign: TextAlign.center,
-                                                ),
-                                                const SizedBox(height: 24),
-                                                ElevatedButton.icon(
-                                                  onPressed: _loadHistory,
-                                                  icon: const Icon(Icons.refresh),
-                                                  label: const Text('Retry'),
-                                                ),
-                                              ],
+                              ]
+                            : [
+                                for (final g in tabGroups)
+                                  RefreshIndicator(
+                                    onRefresh: _loadHistory,
+                                    color: Colors.blue,
+                                    child: _isLoading
+                                        ? Center(
+                                            child: CircularProgressIndicator(),
+                                          )
+                                        : _errorMessage != null
+                                        ? Center(
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(
+                                                24.0,
+                                              ),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  const Icon(
+                                                    Icons.error_outline,
+                                                    color: Colors.red,
+                                                    size: 64,
+                                                  ),
+                                                  const SizedBox(height: 16),
+                                                  Text(
+                                                    'Error: $_errorMessage',
+                                                    style: const TextStyle(
+                                                      color: Colors.red,
+                                                    ),
+                                                    textAlign: TextAlign.center,
+                                                  ),
+                                                  const SizedBox(height: 24),
+                                                  ElevatedButton.icon(
+                                                    onPressed: _loadHistory,
+                                                    icon: const Icon(
+                                                      Icons.refresh,
+                                                    ),
+                                                    label: const Text('Retry'),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          )
+                                        : ListView(
+                                            padding: const EdgeInsets.fromLTRB(
+                                              20,
+                                              20,
+                                              20,
+                                              28,
+                                            ),
+                                            physics:
+                                                const AlwaysScrollableScrollPhysics(),
+                                            children: _buildOneMonthTabBody(
+                                              g.value,
                                             ),
                                           ),
-                                        )
-                                      : ListView(
-                                          padding: const EdgeInsets.fromLTRB(
-                                            20,
-                                            20,
-                                            20,
-                                            28,
-                                          ),
-                                          physics: const AlwaysScrollableScrollPhysics(),
-                                          children: _buildOneMonthTabBody(g.value),
-                                        ),
-                                ),
-                            ],
+                                  ),
+                              ],
                       ),
                     ),
                   ),
