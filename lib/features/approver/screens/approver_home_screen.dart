@@ -59,6 +59,7 @@ class _ApproverHomeScreenState extends State<ApproverHomeScreen> {
     _refreshTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (!_isLoading) {
         fetchDashboard();
+        fetchDailyRequests();
       }
     });
   }
