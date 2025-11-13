@@ -141,15 +141,17 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final query = _search.text.trim().toLowerCase();
+    final q = _search.text.trim().toLowerCase();
 
+    // ✅ Filter + กรองเฉพาะ approved และ rejected
     final filtered = connectedApiItems.where((e) {
-      if (query.isEmpty) return true;
-      final hay =
-          '${e.floor} ${e.roomCode} ${e.slot} ${e.requestedBy} '
-                  '${e.approvedBy ?? ''} ${e.note ?? ''}'
-              .toLowerCase();
-      return hay.contains(query);
+      // กรองออก pending
+      if (e.status == ApprovalStatus.pending) return false;
+
+      // Search filter
+      if (q.isEmpty) return true;
+      final hay = '${e.floor} ${e.roomCode} ${e.slot} ${(e.note ?? '')}'.toLowerCase();
+      return hay.contains(q);
     }).toList();
 
     final tabGroups = _groupByMonthAsc(filtered);
@@ -170,6 +172,7 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
           SafeArea(
             child: DefaultTabController(
               length: tabGroups.isEmpty ? 1 : tabGroups.length,
+              initialIndex: tabGroups.isEmpty ? 0 : (tabGroups.length - 1),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -240,29 +243,31 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
                     ),
                   ),
 
-                  // ===== TabBar ด้านบน (แบบเดียวกับ User) =====
+                  // ===== TabBar ด้านบน =====
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18.0),
-                    child: TabBar(
-                      isScrollable: true,
-                      labelPadding: const EdgeInsets.symmetric(
-                        horizontal: 14.0,
-                      ),
-                      indicatorColor: Colors.white,
-                      indicatorWeight: 2,
-                      labelColor: Colors.white,
-                      unselectedLabelColor: Colors.white70,
-                      labelStyle: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                      ),
-                      tabs: [
-                        for (final g in tabGroups)
-                          Tab(text: _monthYearLabel(g.value.first.dateTime)),
-                      ],
-                    ),
+                    child: tabGroups.isEmpty
+                        ? const SizedBox.shrink()
+                        : TabBar(
+                            isScrollable: true,
+                            labelPadding: const EdgeInsets.symmetric(
+                              horizontal: 14.0,
+                            ),
+                            indicatorColor: Colors.white,
+                            indicatorWeight: 2,
+                            labelColor: Colors.white,
+                            unselectedLabelColor: Colors.white70,
+                            labelStyle: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.2,
+                            ),
+                            tabs: [
+                              for (final g in tabGroups)
+                                Tab(text: _monthYearLabel(g.value.first.dateTime)),
+                            ],
+                          ),
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 18.0),
@@ -294,20 +299,18 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
                           ),
                         ],
                       ),
-                      child: TabBarView(
-                        children: tabGroups.isEmpty
-                            ? [
-                                Center(
-                                  child: Text(
-                                    'No history found',
-                                    style: TextStyle(
-                                      color: Colors.black54,
-                                      fontSize: 18,
-                                    ),
-                                  ),
+                      child: tabGroups.isEmpty
+                          ? Center(
+                              child: Text(
+                                'No history found',
+                                style: TextStyle(
+                                  color: Colors.black54,
+                                  fontSize: 18,
                                 ),
-                              ]
-                            : [
+                              ),
+                            )
+                          : TabBarView(
+                              children: [
                                 for (final g in tabGroups)
                                   RefreshIndicator(
                                     onRefresh: _loadHistory,
@@ -366,7 +369,7 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
                                           ),
                                   ),
                               ],
-                      ),
+                            ),
                     ),
                   ),
                 ],

@@ -196,24 +196,20 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
   Widget build(BuildContext context) {
     final q = _search.text.trim().toLowerCase();
     final filtered = _items.where((e) {
+      // กรองเฉพาะ approved/disapproved
+      if (e.status != DecisionStatus.approved && e.status != DecisionStatus.disapproved) return false;
       if (q.isEmpty) return true;
-      final hay =
-          '${_formatDateOnly(e.dateTime)} ${_formatTimeOnly(e.dateTime)} '
-                  '${e.floor} ${e.roomCode} ${e.slot} ${e.requesterName} '
-                  '${e.status == DecisionStatus.approved ? 'approved' : 'disapproved'} '
-                  '${e.remark ?? ''}'
-              .toLowerCase();
+      //ถ้สต้องการหาจากชื่อคนที่ร้องขอให้แก้ตรงนี้ ${e.floor} ${e.roomCode}
+      final hay = '${e.floor} ${e.roomCode} ${e.slot} ${(e.remark ?? '')}'.toLowerCase();
       return hay.contains(q);
-    }).toList()..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    }).toList();
 
-    // กลุ่มสำหรับแท็บ (เก่า → ใหม่)
     final tabGroups = _groupByMonthAsc(filtered);
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       body: Stack(
         children: [
-          // Gradient พื้นหลังจาก theme
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -227,7 +223,7 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
           SafeArea(
             child: DefaultTabController(
               length: tabGroups.length,
-              // ถ้าอยากเริ่มที่เดือนล่าสุด ให้ใช้ initialIndex: tabGroups.length - 1,
+              initialIndex: tabGroups.isEmpty ? 0 : (tabGroups.length - 1),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -303,25 +299,27 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 18.0),
-                    child: TabBar(
-                      isScrollable: true,
-                      labelPadding: const EdgeInsets.symmetric(
-                        horizontal: 14.0,
-                      ),
-                      indicatorColor: Colors.white,
-                      indicatorWeight: 2,
-                      labelColor: Colors.white,
-                      unselectedLabelColor: Colors.white70,
-                      labelStyle: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                      ),
-                      tabs: [
-                        for (final g in tabGroups)
-                          Tab(text: _monthYearLabel(g.value.first.dateTime)),
-                      ],
-                    ),
+                    child: tabGroups.isEmpty
+                        ? const SizedBox.shrink()
+                        : TabBar(
+                            isScrollable: true,
+                            labelPadding: const EdgeInsets.symmetric(
+                              horizontal: 14.0,
+                            ),
+                            indicatorColor: Colors.white,
+                            indicatorWeight: 2,
+                            labelColor: Colors.white,
+                            unselectedLabelColor: Colors.white70,
+                            labelStyle: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.2,
+                            ),
+                            tabs: [
+                              for (final g in tabGroups)
+                                Tab(text: _monthYearLabel(g.value.first.dateTime)),
+                            ],
+                          ),
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 18.0),
@@ -356,47 +354,29 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
                           ),
                         ],
                       ),
-                      child: TabBarView(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(26),
+                      child: filtered.isEmpty
+                          ? Center(
+                              child: Text(
+                                'No history found',
+                                style: TextStyle(
+                                  color: Color(0xFF9AA1A9),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Color.fromARGB(255, 255, 255, 255),
-                                    Color.fromARGB(255, 255, 255, 255),
-                                  ],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    blurRadius: 24,
-                                    spreadRadius: -8,
-                                    color: Colors.black26,
-                                    offset: Offset(0, -6),
-                                  ),
-                                ],
                               ),
-                              child: TabBarView(
-                                children: [
-                                  for (final g in tabGroups)
-                                    RefreshIndicator(
-                                      onRefresh: _loadHistory,
-                                      child: ListView(
-                                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                                        children: _buildOneMonthTabBody(g.value),
-                                      ),
+                            )
+                          : TabBarView(
+                              children: [
+                                for (final g in tabGroups)
+                                  RefreshIndicator(
+                                    onRefresh: _loadHistory,
+                                    child: ListView(
+                                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                                      children: _buildOneMonthTabBody(g.value),
                                     ),
-                                ],
-                              ),
+                                  ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ],
