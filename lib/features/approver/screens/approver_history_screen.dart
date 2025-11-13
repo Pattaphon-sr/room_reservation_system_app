@@ -36,7 +36,8 @@ class ApproverHistoryScreen extends StatefulWidget {
   State<ApproverHistoryScreen> createState() => _ApproverHistoryScreenState();
 }
 
-class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
+class _ApproverHistoryScreenState extends State<ApproverHistoryScreen>
+    with TickerProviderStateMixin {
   final TextEditingController _search = TextEditingController();
   final ApproverHistoryService _service =
       ApproverHistoryService(); // ✅ เพิ่ม service
@@ -46,6 +47,7 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
   bool _isLoading = true; // ✅ เพิ่ม loading state
   // ignore: unused_field
   String? _errorMessage; // ✅ เพิ่ม error state
+  TabController? _tabController;
 
   @override
   void initState() {
@@ -65,6 +67,7 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
         _items = items;
         _isLoading = false;
       });
+      _updateTabController();
       print('✅ Loaded ${items.length} items');
     } catch (e) {
       setState(() {
@@ -75,7 +78,34 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
     }
   }
 
-  final List<ApproverHistoryItem> connected_api_items = [];
+  void _updateTabController() {
+    final filtered = _items
+        .where(
+          (e) =>
+              e.status == DecisionStatus.approved ||
+              e.status == DecisionStatus.disapproved,
+        )
+        .toList();
+    final tabGroups = _groupByMonthAsc(filtered);
+    final tabLen = tabGroups.length;
+    if (_tabController == null || _tabController!.length != tabLen) {
+      _tabController?.dispose();
+      _tabController = TabController(
+        length: tabLen,
+        vsync: this,
+        initialIndex: tabLen > 0 ? tabLen - 1 : 0,
+      );
+      setState(() {});
+    } else {
+      _tabController!.index = tabLen > 0 ? tabLen - 1 : 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
+  }
 
   // ===== Helpers: format =====
   String _formatDateOnly(DateTime dt) {
@@ -145,66 +175,59 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
 
   // บล็อกแบบรวมรายเดือน (ยังเก็บไว้ เผื่อใช้)
 
-  // เนื้อหา "หนึ่งแท็บของเดือน" (แยก Approved / Rejected)
-  // เนื้อหา "หนึ่งแท็บของเดือน" (แยก Approved / Rejected)
+  // เนื้อหา "หนึ่งแท็บของเดือน" (เรียงตามวันที่ล่าสุด ไม่แยก Approved/Rejected)
   List<Widget> _buildOneMonthTabBody(List<ApproverHistoryItem> monthItems) {
-    // 💡 ไม่ต้องแยก approved/rejected แล้ว เพราะต้องการเรียงตามวันที่/เวลาอย่างเดียว
-    final sortedItems = monthItems
-      ..sort(
-        (a, b) => b.dateTime.compareTo(a.dateTime),
-      ); // ในเดือน: ใหม่ → เก่า (ย้ำ)
+    final sorted = List<ApproverHistoryItem>.from(monthItems)
+      ..sort((a, b) => b.dateTime.compareTo(a.dateTime)); // ใหม่ → เก่า
 
-    List<Widget> tiles(List<ApproverHistoryItem> list) => List<Widget>.generate(
-      // ต้องใส่เงื่อนไข list.isEmpty เพื่อจัดการกรณีที่ไม่มีข้อมูลในกลุ่มที่กรองมา
-      list.isEmpty
-          ? 0
-          : (list.length * 2 - 1), // ถ้าว่าง list.length เป็น 0 ให้สร้าง 0
-      (index) {
-        // if (list.isEmpty) return SizedBox.shrink(); // ลบออก เนื่องจากจัดการด้านบนแล้ว
-
-        if (index.isOdd) {
-          return const Divider(
-            height: 22,
-            thickness: 0.9,
-            color: Color(0xFFE1E6EB),
-          );
-        }
-        final i = index ~/ 2;
-        return _ApproverTile(item: list[i]);
-      },
-    );
-
-    // 💡 แสดงผลรายการทั้งหมดที่เรียงตามเวลาแล้ว
-    return [
-      const SizedBox(height: 10),
-      // ถ้าไม่มีรายการหลัง filter/search จะแสดงเป็น [] ซึ่ง TabBarView จะรับได้
-      ...tiles(sortedItems),
-      const SizedBox(height: 12),
-    ];
+    return List<Widget>.generate(sorted.isEmpty ? 1 : (sorted.length * 2 - 1), (
+      index,
+    ) {
+      if (sorted.isEmpty) return SizedBox.shrink();
+      if (index.isOdd) {
+        return const Divider(
+          height: 22,
+          thickness: 0.9,
+          color: Color(0xFFE1E6EB),
+        );
+      }
+      final i = index ~/ 2;
+      return _ApproverTile(item: sorted[i]);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final q = _search.text.trim().toLowerCase();
     final filtered = _items.where((e) {
+      // กรองเฉพาะ approved/disapproved
+      if (e.status != DecisionStatus.approved &&
+          e.status != DecisionStatus.disapproved)
+        return false;
       if (q.isEmpty) return true;
-      final hay =
-          '${_formatDateOnly(e.dateTime)} ${_formatTimeOnly(e.dateTime)} '
-                  '${e.floor} ${e.roomCode} ${e.slot} ${e.requesterName} '
-                  '${e.status == DecisionStatus.approved ? 'approved' : 'disapproved'} '
-                  '${e.remark ?? ''}'
-              .toLowerCase();
+      //ถ้สต้องการหาจากชื่อคนที่ร้องขอให้แก้ตรงนี้ ${e.floor} ${e.roomCode}
+      final hay = '${e.floor} ${e.roomCode} ${e.slot} ${(e.remark ?? '')}'
+          .toLowerCase();
       return hay.contains(q);
-    }).toList()..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    }).toList();
 
-    // กลุ่มสำหรับแท็บ (เก่า → ใหม่)
     final tabGroups = _groupByMonthAsc(filtered);
+    final tabLen = tabGroups.length;
+
+    // อัปเดต TabController ถ้าจำนวนแท็บเปลี่ยน
+    if (_tabController == null || _tabController!.length != tabLen) {
+      _tabController?.dispose();
+      _tabController = TabController(
+        length: tabLen,
+        vsync: this,
+        initialIndex: tabLen > 0 ? tabLen - 1 : 0,
+      );
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       body: Stack(
         children: [
-          // Gradient พื้นหลังจาก theme
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -217,203 +240,180 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
           ),
           SafeArea(
             child: DefaultTabController(
-              length: tabGroups.length,
-              initialIndex: (tabGroups.length - 1 < 0)
-                  ? 0
-                  : tabGroups.length - 1,
-              // ถ้าอยากเริ่มที่เดือนล่าสุด ให้ใช้ initialIndex: tabGroups.length - 1,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 40),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Text(
-                      'History',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 35,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-
-                  // Search
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: AppColors.oceanDeep,
-                            blurRadius: 18,
-                            spreadRadius: -2,
-                            offset: Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: _search,
-                        onChanged: (_) => setState(() {}),
-                        style: const TextStyle(color: Colors.white),
-                        cursorColor: Colors.white,
-                        decoration: InputDecoration(
-                          hintText: 'Search ...',
-                          hintStyle: const TextStyle(color: Colors.white70),
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: Colors.white,
-                          ),
-                          filled: true,
-                          fillColor: const Color(0x334A74A8),
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(28),
-                            borderSide: BorderSide(
-                              color: Colors.white.withOpacity(0.25),
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(28),
-                            borderSide: BorderSide(
-                              color: Colors.white.withOpacity(0.25),
-                            ),
-                          ),
-                          focusedBorder: const OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(28)),
-                            borderSide: BorderSide(color: Colors.white),
-                          ),
+              length: tabLen,
+              child: Builder(
+                builder: (context) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 40),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Text(
+                        'History',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 35,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
                         ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 30),
 
-                  // ===== TabBar =====
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18.0),
-                    child: TabBar(
-                      isScrollable: true,
-                      labelPadding: const EdgeInsets.symmetric(
-                        horizontal: 14.0,
-                      ),
-                      indicatorColor: Colors.white,
-                      indicatorWeight: 2,
-                      labelColor: Colors.white,
-                      unselectedLabelColor: Colors.white70,
-                      labelStyle: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.2,
-                      ),
-                      tabs: [
-                        for (final g in tabGroups)
-                          Tab(text: _monthYearLabel(g.value.first.dateTime)),
-                      ],
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 18.0),
-                    child: Divider(
-                      height: 18,
-                      thickness: 1,
-                      color: Color(0x66FFFFFF),
-                    ),
-                  ),
-
-                  // ===== เนื้อหาในแต่ละแท็บ =====
-                  Expanded(
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(26),
-                        ),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Color.fromARGB(255, 255, 255, 255),
-                            Color.fromARGB(255, 255, 255, 255),
+                    // Search
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: AppColors.oceanDeep,
+                              blurRadius: 18,
+                              spreadRadius: -2,
+                              offset: Offset(0, 6),
+                            ),
                           ],
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            blurRadius: 24,
-                            spreadRadius: -8,
-                            color: Colors.black26,
-                            offset: Offset(0, -6),
-                          ),
-                        ],
-                      ),
-                      child: TabBarView(
-                        children: [
-                          Expanded(
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(26),
-                                ),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Color.fromARGB(255, 255, 255, 255),
-                                    Color.fromARGB(255, 255, 255, 255),
-                                  ],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    blurRadius: 24,
-                                    spreadRadius: -8,
-                                    color: Colors.black26,
-                                    offset: Offset(0, -6),
-                                  ),
-                                ],
-                              ),
-                              child: TabBarView(
-                                children: tabGroups.isEmpty
-                                    ? [
-                                        Center(
-                                          child: Text(
-                                            'No history found',
-                                            style: TextStyle(
-                                              color: Colors.black54,
-                                              fontSize: 18,
-                                            ),
-                                          ),
-                                        ),
-                                      ]
-                                    : [
-                                        for (final g in tabGroups)
-                                          RefreshIndicator(
-                                            onRefresh: _loadHistory,
-                                            child: ListView(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                    20,
-                                                    20,
-                                                    20,
-                                                    28,
-                                                  ),
-                                              children: _buildOneMonthTabBody(
-                                                g.value,
-                                              ),
-                                            ),
-                                          ),
-                                      ],
+                        child: TextField(
+                          controller: _search,
+                          onChanged: (_) => setState(() {}),
+                          style: const TextStyle(color: Colors.white),
+                          cursorColor: Colors.white,
+                          decoration: InputDecoration(
+                            hintText: 'Search ...',
+                            hintStyle: const TextStyle(color: Colors.white70),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: Colors.white,
+                            ),
+                            filled: true,
+                            fillColor: const Color(0x334A74A8),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(28),
+                              borderSide: BorderSide(
+                                color: Colors.white.withOpacity(0.25),
                               ),
                             ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(28),
+                              borderSide: BorderSide(
+                                color: Colors.white.withOpacity(0.25),
+                              ),
+                            ),
+                            focusedBorder: const OutlineInputBorder(
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(28),
+                              ),
+                              borderSide: BorderSide(color: Colors.white),
+                            ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+
+                    // ===== TabBar =====
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18.0),
+                      child: tabGroups.isEmpty
+                          ? const SizedBox.shrink()
+                          : TabBar(
+                              controller: _tabController,
+                              isScrollable: true,
+                              labelPadding: const EdgeInsets.symmetric(
+                                horizontal: 14.0,
+                              ),
+                              indicatorColor: Colors.white,
+                              indicatorWeight: 2,
+                              labelColor: Colors.white,
+                              unselectedLabelColor: Colors.white70,
+                              labelStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.2,
+                              ),
+                              tabs: [
+                                for (final g in tabGroups)
+                                  Tab(
+                                    text: _monthYearLabel(
+                                      g.value.first.dateTime,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 18.0),
+                      child: Divider(
+                        height: 18,
+                        thickness: 1,
+                        color: Color(0x66FFFFFF),
+                      ),
+                    ),
+
+                    // ===== เนื้อหาในแต่ละแท็บ =====
+                    Expanded(
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(26),
+                          ),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Color.fromARGB(255, 255, 255, 255),
+                              Color.fromARGB(255, 255, 255, 255),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              blurRadius: 24,
+                              spreadRadius: -8,
+                              color: Colors.black26,
+                              offset: Offset(0, -6),
+                            ),
+                          ],
+                        ),
+                        child: filtered.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'No history found',
+                                  style: TextStyle(
+                                    color: Color(0xFF9AA1A9),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              )
+                            : TabBarView(
+                                controller: _tabController,
+                                children: [
+                                  for (final g in tabGroups)
+                                    RefreshIndicator(
+                                      onRefresh: _loadHistory,
+                                      child: ListView(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          20,
+                                          20,
+                                          20,
+                                          28,
+                                        ),
+                                        children: _buildOneMonthTabBody(
+                                          g.value,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
