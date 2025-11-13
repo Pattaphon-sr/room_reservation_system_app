@@ -74,6 +74,7 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
       print('❌ Error: $e');
     }
   }
+
   final List<ApproverHistoryItem> connected_api_items = [];
 
   // ===== Helpers: format =====
@@ -145,18 +146,22 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
   // บล็อกแบบรวมรายเดือน (ยังเก็บไว้ เผื่อใช้)
 
   // เนื้อหา "หนึ่งแท็บของเดือน" (แยก Approved / Rejected)
+  // เนื้อหา "หนึ่งแท็บของเดือน" (แยก Approved / Rejected)
   List<Widget> _buildOneMonthTabBody(List<ApproverHistoryItem> monthItems) {
-    final approved =
-        monthItems.where((e) => e.status == DecisionStatus.approved).toList()
-          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
-    final rejected =
-        monthItems.where((e) => e.status == DecisionStatus.disapproved).toList()
-          ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    // 💡 ไม่ต้องแยก approved/rejected แล้ว เพราะต้องการเรียงตามวันที่/เวลาอย่างเดียว
+    final sortedItems = monthItems
+      ..sort(
+        (a, b) => b.dateTime.compareTo(a.dateTime),
+      ); // ในเดือน: ใหม่ → เก่า (ย้ำ)
 
     List<Widget> tiles(List<ApproverHistoryItem> list) => List<Widget>.generate(
-      list.isEmpty ? 1 : (list.length * 2 - 1),
+      // ต้องใส่เงื่อนไข list.isEmpty เพื่อจัดการกรณีที่ไม่มีข้อมูลในกลุ่มที่กรองมา
+      list.isEmpty
+          ? 0
+          : (list.length * 2 - 1), // ถ้าว่าง list.length เป็น 0 ให้สร้าง 0
       (index) {
-        if (list.isEmpty) return SizedBox.shrink();
+        // if (list.isEmpty) return SizedBox.shrink(); // ลบออก เนื่องจากจัดการด้านบนแล้ว
+
         if (index.isOdd) {
           return const Divider(
             height: 22,
@@ -169,25 +174,11 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
       },
     );
 
+    // 💡 แสดงผลรายการทั้งหมดที่เรียงตามเวลาแล้ว
     return [
-      // const Text(
-      //   'Approved',
-      //   style: TextStyle(color: Colors.black54, fontSize: 17, fontWeight: FontWeight.w700),
-      // ),
       const SizedBox(height: 10),
-      ...tiles(approved),
-
-      // const SizedBox(height: 24),
-      // const Divider(height: 0, thickness: 0.8, color: Color(0xFFE1E6EB)),
-      // const SizedBox(height: 18),
-
-      // const Text(
-      //   'Rejected',
-      //   style: TextStyle(color: Colors.black54, fontSize: 17, fontWeight: FontWeight.w700),
-      // ),
-      const SizedBox(height: 5),
-      ...tiles(rejected),
-
+      // ถ้าไม่มีรายการหลัง filter/search จะแสดงเป็น [] ซึ่ง TabBarView จะรับได้
+      ...tiles(sortedItems),
       const SizedBox(height: 12),
     ];
   }
@@ -227,6 +218,9 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
           SafeArea(
             child: DefaultTabController(
               length: tabGroups.length,
+              initialIndex: (tabGroups.length - 1 < 0)
+                  ? 0
+                  : tabGroups.length - 1,
               // ถ้าอยากเริ่มที่เดือนล่าสุด ให้ใช้ initialIndex: tabGroups.length - 1,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -382,16 +376,36 @@ class _ApproverHistoryScreenState extends State<ApproverHistoryScreen> {
                                 ],
                               ),
                               child: TabBarView(
-                                children: [
-                                  for (final g in tabGroups)
-                                    RefreshIndicator(
-                                      onRefresh: _loadHistory,
-                                      child: ListView(
-                                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-                                        children: _buildOneMonthTabBody(g.value),
-                                      ),
-                                    ),
-                                ],
+                                children: tabGroups.isEmpty
+                                    ? [
+                                        Center(
+                                          child: Text(
+                                            'No history found',
+                                            style: TextStyle(
+                                              color: Colors.black54,
+                                              fontSize: 18,
+                                            ),
+                                          ),
+                                        ),
+                                      ]
+                                    : [
+                                        for (final g in tabGroups)
+                                          RefreshIndicator(
+                                            onRefresh: _loadHistory,
+                                            child: ListView(
+                                              padding:
+                                                  const EdgeInsets.fromLTRB(
+                                                    20,
+                                                    20,
+                                                    20,
+                                                    28,
+                                                  ),
+                                              children: _buildOneMonthTabBody(
+                                                g.value,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
                               ),
                             ),
                           ),

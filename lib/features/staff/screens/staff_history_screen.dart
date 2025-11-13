@@ -169,7 +169,10 @@ class _StaffHistoryScreenState extends State<StaffHistoryScreen> {
           ),
           SafeArea(
             child: DefaultTabController(
-              length: tabGroups.isEmpty ? 1 : tabGroups.length,
+              length: tabGroups.length,
+              initialIndex: (tabGroups.length - 1 < 0)
+                  ? 0
+                  : tabGroups.length - 1,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
