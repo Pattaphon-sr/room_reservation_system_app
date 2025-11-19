@@ -10,7 +10,7 @@ class StaffHistoryService {
     try {
       // เปลี่ยน endpoint เป็นของ staff
       //final res = await _dio.get('/staff/history');
-      final res = await _dio.get('/reservations/history');
+      final res = await _dio.get('/reservations/history/staff');
       if (res.statusCode == 200) {
         final data = (res.data as List).cast<Map<String, dynamic>>();
 
